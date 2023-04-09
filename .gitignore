@@ -18,5 +18,6 @@
 !/scripts/**
 !.gitignore
 !.gitkeep
+!.linkignore
 !/LICENSE
 !/README.md

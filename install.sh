@@ -33,6 +33,10 @@ function main() {
   print_info "Initializing system..."
   "${current_dir}/scripts/init.sh"
 
+  # Create symbolic links
+  print_info "Creating symbolic links..."
+  "${current_dir}/scripts/link.sh"
+
   print_success "All done!"
 }
 
