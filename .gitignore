@@ -1,0 +1,9 @@
+### all ignore for white list ###
+/*
+/.**
+
+### white list ###
+!/LICENSE
+!/README.md
+!.gitignore
+!.gitkeep
