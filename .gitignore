@@ -14,8 +14,8 @@
 
 ### global ###
 !/install.sh
-!/install_scripts/
-!/install_scripts/**
+!/scripts/
+!/scripts/**
 !.gitignore
 !.gitkeep
 !/LICENSE
