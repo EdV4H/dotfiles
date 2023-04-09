@@ -64,6 +64,9 @@ function whichdistro() {
 	#which yum > /dev/null && { echo redhat; return; }
 	#which zypper > /dev/null && { echo opensuse; return; }
 	#which apt-get > /dev/null && { echo debian; return; }
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo darwin
+    return
 	if [ -f /etc/debian_version ]; then
 		echo debian
 		return
@@ -98,7 +101,7 @@ function checkinstall() {
 	fi
 
 	local pkgs="$*"
-	if [[ $distro == "debian" ]]; then
+	if [[ $distro == "debian" | "darwin" ]]; then
 		pkgs=${pkgs//python-pip/python3-pip}
 		sudo DEBIAN_FRONTEND=noninteractive apt-get install -y $pkgs
 	elif [[ $distro == "redhat" ]]; then
