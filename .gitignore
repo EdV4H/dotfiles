@@ -3,7 +3,20 @@
 /.**
 
 ### white list ###
-!/LICENSE
-!/README.md
+
+### config ###
+!/.config
+!/.config/**
+
+### github ###
+!/.github
+!/.github/**
+
+### global ###
+!/install.sh
+!/install_scripts/
+!/install_scripts/**
 !.gitignore
 !.gitkeep
+!/LICENSE
+!/README.md
