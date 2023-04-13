@@ -17,8 +17,8 @@ return {
     -- Keymap
     local opts = { noremap = true, silent = true }
 
-    vim.keymap.set("n", "<leader>e", "<cmd>Fern .<Return>", opts)
-    vim.keymap.set("n", "<leader>E", "<cmd>Fern . -reveal=%<Return>", opts)
+    vim.keymap.set("n", "<leader>E", "<cmd>Fern .<Return>", opts)
+    vim.keymap.set("n", "<leader>e", "<cmd>Fern . -reveal=%<Return>", opts)
 
     -- Icon color
     vim.g["glyph_palette#palette"] = require("fr-web-icons").palette()
