@@ -5,8 +5,21 @@
 ### white list ###
 
 ### config ###
-!/.config
+!/.config/
 !/.config/**
+
+### lazygit ###
+!/.config/lazygit/
+!/.config/lazygit/**
+/.config/lazygit/state.yml
+
+### nvim ###
+!/.config/nvim/
+!/.config/nvim/**
+
+### wezterm ###
+!/.config/wezterm/
+!/.config/wezterm/**
 
 ### github ###
 !/.github
