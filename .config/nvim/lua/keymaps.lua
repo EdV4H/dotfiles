@@ -45,5 +45,5 @@ keymap("n", "<C-n>", ":Fern . -reveal=% -drawer -toggle -width=40<Return>", opts
 -- Terminal --
 
 -- escape from insert on <ESC>
-keymap("t", "<ESC>", [[<C-\><C-n>]], opts)
+keymap("t", "<leader><ESC>", [[<C-\><C-n>]], opts)
 
