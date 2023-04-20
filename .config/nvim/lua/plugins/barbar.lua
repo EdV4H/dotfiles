@@ -11,6 +11,7 @@ return {
 
     -- Close buffer
     keymap("n", "<leader>t", "<Cmd>BufferClose<Return>", opts)
+    keymap("n", "<leader>T", "<Cmd>BufferCloseAllButCurrent<Return>", opts)
   end,
 }
 
