@@ -1,26 +1,32 @@
 return {
-  "lambdalisue/fern.vim",
+  "nvim-telescope/telescope-file-browser.nvim",
   dependencies = {
-    "lambdalisue/fern-git-status.vim",
-    "lambdalisue/fern-hijack.vim",
-    "lambdalisue/nerdfont.vim",
+    "nvim-telescope/telescope.nvim",
+    "nvim-lua/plenary.nvim",
     "nvim-tree/nvim-web-devicons",
-    "lambdalisue/fern-renderer-nerdfont.vim",
-    "TheLeoP/fern-renderer-web-devicons.nvim",
-    "lambdalisue/glyph-palette.vim",
   },
-  init = function()
-    vim.g["fern#default_hidden"] = 1
-    vim.g["fern#renderer"] = "nvim-web-devicons"
-  end,
   config = function()
+    require("telescope").setup {
+      extensions = {
+        file_browser = {
+          hidden = true,
+          hijack_netrw = true,
+          mapping = {
+            ["i"] = {},
+            ["n"] = {},
+          },
+        },
+      },
+    }
+    require("telescope").load_extension("file_browser")
+
     -- Keymap
-    local opts = { noremap = true, silent = true }
-
-    vim.keymap.set("n", "<leader>E", "<cmd>Fern .<Return>", opts)
-    vim.keymap.set("n", "<leader>e", "<cmd>Fern . -reveal=%<Return>", opts)
-
-    -- Icon color
-    vim.g["glyph_palette#palette"] = require("fr-web-icons").palette()
+    vim.api.nvim_set_keymap(
+      "n",
+      "<leader>fb",
+      "<cmd>Telescope file_browser path=%:p:h select_buffer=true<cr>",
+      { noremap = true, silent = true }
+    )
   end,
+
 }
