@@ -37,6 +37,16 @@ return {
       vim.keymap.set("n", "<leader>d", "<cmd>Telescope coc diagnostics<Return>", coc_opts)
     end,
   },
+  {
+    "nvim-telescope/telescope-frecency.nvim",
+    config = function()
+      require("telescope").load_extension("frecency")
+
+      -- Keymap
+      vim.keymap.set("n", "<leader>fr", "<Cmd>lua require('telescope').extensions.frecency.frecency()<CR>", {noremap = true, silent = true})
+    end,
+    dependencies = {"kkharji/sqlite.lua"}
+  },
   "fannheyward/telescope-coc.nvim",
 }
 
