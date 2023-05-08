@@ -37,6 +37,10 @@ function main() {
   print_info "Creating symbolic links..."
   "${current_dir}/scripts/link.sh"
 
+  # Install npm packages
+  print_info "Installing npm packages..."
+  "${current_dir}/scripts/install-npm-global-packages.sh"
+
   print_success "All done!"
 }
 
