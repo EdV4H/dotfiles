@@ -9,16 +9,13 @@ return {
       require("telescope").setup({
         defaults = {
           winblend = 5,
+          sorting_strategy = "ascending",
+          layout_config = {
+            prompt_position = "top",
+          },
         },
-        extensions = {
-          coc = {
-            prefer_locations = true,
-          }
-        }
+        extensions = {}
       })
-
-      -- Extentions
-      require("telescope").load_extension("coc")
 
       -- Base keymap
       local builtin = require("telescope.builtin")
@@ -27,14 +24,6 @@ return {
       vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
       vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
       vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
-
-      -- Coc keymap
-      local coc_opts = { silent = true }
-      vim.keymap.set("n", "gd", "<cmd>Telescope coc definitions<Return>", coc_opts)
-      vim.keymap.set("n", "gy", "<cmd>Telescope coc type_definitions<Return>", coc_opts)
-      vim.keymap.set("n", "gi", "<cmd>Telescope coc implementations<Return>", coc_opts)
-      vim.keymap.set("n", "gr", "<cmd>Telescope coc references<Return>", coc_opts)
-      vim.keymap.set("n", "<leader>d", "<cmd>Telescope coc diagnostics<Return>", coc_opts)
     end,
   },
   {
@@ -47,6 +36,5 @@ return {
     end,
     dependencies = {"kkharji/sqlite.lua"}
   },
-  "fannheyward/telescope-coc.nvim",
 }
 

@@ -19,9 +19,3 @@ autocmd("TermOpen", {
 
 -- Colored icon
 augroup("my-glyph-palette", { clear = true })
-autocmd("FileType", {
-  group = "my-glyph-palette",
-  pattern = "fern",
-  command = "call glyph_palette#apply()",
-})
-
