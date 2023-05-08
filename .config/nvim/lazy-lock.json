@@ -13,7 +13,7 @@
   "cmp-treesitter": { "branch": "master", "commit": "389eadd48c27aa6dc0e6b992644704f026802a2e" },
   "colorbuddy.nvim": { "branch": "master", "commit": "cdb5b0654d3cafe61d2a845e15b2b4b0e78e752a" },
   "copilot-cmp": { "branch": "master", "commit": "ad4c097bf76c544fce95a2cb6b02f245cb18a6bb" },
-  "copilot.lua": { "branch": "master", "commit": "8b0fd23747ef82154ef9f919c75623156465cc89" },
+  "copilot.lua": { "branch": "master", "commit": "3bfdf96d5eb7704ece1013ef04d0b0d211d12ee7" },
   "dracula.nvim": { "branch": "main", "commit": "26d04c8ced02f02207e7aec1d5730c3a9ebadeeb" },
   "everforest": { "branch": "master", "commit": "e6e3cbdc854dcd75a2f1a9648ab21103acb79c44" },
   "fidget.nvim": { "branch": "main", "commit": "0ba1e16d07627532b6cae915cc992ecac249fb97" },
