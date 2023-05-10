@@ -2,6 +2,8 @@ require("base")
 require("autocmds")
 require("options")
 require("keymaps")
-require("lazy-config")
+if vim.fn.exists("g:vscode") ~= 1 then
+  require("lazy-config")
+end
 require("color-scheme")
 
