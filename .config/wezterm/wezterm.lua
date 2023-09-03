@@ -12,6 +12,9 @@ end
 
 -- This is where you actually apply your config choices
 
+-- 背景透過
+config.window_background_opacity = 0.85
+
 -- Font
 config.font = wezterm.font("FiraCode Nerd Font", { italic = false })
 config.font_size = 14.0
@@ -27,6 +30,38 @@ config.mouse_bindings = {
     event={Up={streak=1, button="Left"}},
     mods="CMD",
     action="OpenLinkAtMouseCursor",
+  },
+}
+
+-- Keybindings
+local act = wezterm.action
+config.keys = {
+  -- Ctrl+Shift+sで新しいペインを作成(画面を分割)
+  {
+    key = 's',
+    mods = 'SHIFT|CTRL',
+    action = act.SplitHorizontal { domain = 'CurrentPaneDomain' },
+  },
+  -- Ctrl+Shift+vで新しいペインを作成(画面を分割)
+  {
+    key = 'v',
+    mods = 'SHIFT|CTRL',
+    action = act.SplitVertical { domain = 'CurrentPaneDomain' },
+  },
+  -- Ctrl+Shift+wで現在のペインを閉じる
+  {
+    key = 'w',
+    mods = 'SHIFT|CTRL',
+    action = act.CloseCurrentPane { confirm = true },
+  },
+  -- Ctrl+Backspaceで前の単語を削除
+  {
+    key = "Backspace",
+    mods = "CTRL",
+    action = act.SendKey {
+      key = "w",
+      mods = "CTRL",
+    },
   },
 }
 
