@@ -1,1 +1,1 @@
-print("hello nvim!")
+require('core')
