@@ -101,7 +101,7 @@ local function map(mod)
       tbl = { tbl, 'table' }
     })
 
-    if type(tbl[1]) = 'table' and type(tbl[2]) == 'table' then
+    if type(tbl[1]) == 'table' and type(tbl[2]) == 'table' then
       for _, v in pairs(tbl) do
         keymap_set(mod, v)
       end
