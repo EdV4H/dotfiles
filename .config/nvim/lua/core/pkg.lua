@@ -77,6 +77,7 @@ function pkg:boot_strap()
   local lazy = require('lazy')
   local opts = {
     lockfile = self.helper.path_join(self.data_path, 'lazy-lock.json'),
+    lazy = true,
   }
   lazy.setup('modules', opts)
 end
