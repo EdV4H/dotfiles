@@ -1,6 +1,6 @@
 vim.cmd [[
   try
-    colorscheme everforest
+    colorscheme nord
     hi Comment gui=NONE
   catch /^Vim\%((\a\+)\)\=:E185/
     colorscheme default

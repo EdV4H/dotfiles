@@ -1,14 +1,15 @@
+local conf = require('modules.ui.config')
+
 return {
   -- rich ui
   {
     'folke/noice.nvim',
+    event = 'VeryLazy',
     dependencies = {
       'MunifTanjim/nui.nvim',
       'rcarriga/nvim-notify',
     },
-    config = function()
-      require('noice').setup({})
-    end,
+    config = conf.noice,
   },
   -- automatically syncs terminal background and cursor with any neovim colorscheme.
   {
@@ -17,6 +18,7 @@ return {
   },
   -- color scheme
   {
-    'sainnhe/everforest',
+    'shaunsingh/nord.nvim',
+    config = conf.nord,
   },
 }
