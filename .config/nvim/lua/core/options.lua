@@ -1,6 +1,7 @@
 local base_options = {
   encoding = 'utf-8',
   fileencoding = 'utf-8',
+  hidden = true, -- Disable buffer warning
   backup = false, -- Disable nvim's backup
   clipboard = 'unnamedplus', -- Sync clipboard between nvim and system
   swapfile = false, -- Disable swap file
