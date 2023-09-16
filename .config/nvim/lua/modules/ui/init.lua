@@ -21,4 +21,13 @@ return {
     'shaunsingh/nord.nvim',
     config = conf.nord,
   },
+  -- status line
+  {
+    'nvim-lualine/lualine.nvim',
+    dependencies = {
+      'nvim-tree/nvim-web-devicons',
+    },
+    event = 'VeryLazy',
+    config = conf.lualine,
+  },
 }
