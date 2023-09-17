@@ -11,15 +11,16 @@ return {
     },
     config = conf.noice,
   },
+  -- color scheme
+  {
+    'shaunsingh/nord.nvim',
+    event = 'VeryLazy',
+    config = conf.nord,
+  },
   -- automatically syncs terminal background and cursor with any neovim colorscheme.
   {
     "typicode/bg.nvim",
     lazy = false,
-  },
-  -- color scheme
-  {
-    'shaunsingh/nord.nvim',
-    config = conf.nord,
   },
   -- status line
   {

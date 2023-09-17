@@ -13,7 +13,7 @@ end
 -- This is where you actually apply your config choices
 
 -- 背景透過
-config.window_background_opacity = 0.85
+config.window_background_opacity = 1
 
 -- Font
 config.font = wezterm.font("FiraCode Nerd Font", { italic = false })
