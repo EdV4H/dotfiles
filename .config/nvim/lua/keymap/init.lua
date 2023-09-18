@@ -49,6 +49,7 @@ tmap(
 
 -- folke/lazy.nvim
 
-nmap(
-  { '<leader>pi', cmd('Lazy update'), opts(noremap, silent) }
-)
+nmap({
+  { '<leader>pi', cmd('Lazy install'), opts(noremap, silent) },
+  { '<leader>pu', cmd('Lazy update'), opts(noremap, silent) },
+})
