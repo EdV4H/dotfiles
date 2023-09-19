@@ -31,4 +31,11 @@ return {
     event = 'VeryLazy',
     config = conf.lualine,
   },
+  -- starup screen
+  {
+    'glepnir/dashboard-nvim',
+    event = 'VimEnter',
+    config = conf.dashboard,
+    dependencies = { {'nvim-tree/nvim-web-devicons'} }
+  }
 }
