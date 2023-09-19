@@ -53,3 +53,14 @@ nmap({
   { '<leader>pi', cmd('Lazy install'), opts(noremap, silent) },
   { '<leader>pu', cmd('Lazy update'), opts(noremap, silent) },
 })
+
+-- akinsho/bufferline.nvim
+
+nmap({
+  { '<leader>bc', cmd('bd'), opts(noremap) },
+  { '<leader>bpc', cmd('BufferLinePickClose'), opts(noremap) },
+  { '<leader>bC', cmd('BufferLineCloseOthers'), opts(noremap) },
+  { '<S-l>', cmd('BufferLineCycleNext'), opts(noremap) },
+  { '<S-h>', cmd('BufferLineCyclePrev'), opts(noremap) },
+  { '<leader>bsd', cmd('BufferLineSortByDirectory'), opts(noremap) },
+})
