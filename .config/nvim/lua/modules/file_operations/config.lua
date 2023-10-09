@@ -21,4 +21,20 @@ function config.telescope()
   })
 end
 
+function config.telescope_file_browser()
+  require('telescope').setup({
+    extensions = {
+      file_browser = {
+        hidden = true,
+        hijack_netrw = true,
+        mapping = {
+          ['n'] = {},
+          ['i'] = {},
+        },
+      },
+    },
+  })
+  require('telescope').load_extension('file_browser')
+end
+
 return config

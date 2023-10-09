@@ -22,6 +22,6 @@ g.loaded_netrwFileHandlers = 1
 
 require('core.base')
 require('core.options')
-require('keymap')
 require('core.pkg'):boot_strap()
+require('keymap')
 require('core.color_scheme')

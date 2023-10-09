@@ -64,3 +64,16 @@ nmap({
   { '<S-h>', cmd('BufferLineCyclePrev'), opts(noremap) },
   { '<leader>bsd', cmd('BufferLineSortByDirectory'), opts(noremap) },
 })
+
+-- nvim-telescope/telescope.nvim
+
+local builtin = require('telescope.builtin')
+
+nmap({
+  { '<leader>ff', builtin.find_files, opts(noremap) },
+  { '<leader>fg', builtin.live_grep, opts(noremap) },
+  { '<leader>fb', builtin.buffers, opts(noremap) },
+  { '<leader>fh', builtin.help_tags, opts(noremap) },
+  -- file browser extension
+  { '<leader>e', cmd('Telescope file_browser path=%:p:h select_buffer=true'), opts(noremap) },
+})

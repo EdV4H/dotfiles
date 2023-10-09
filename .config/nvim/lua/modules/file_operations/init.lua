@@ -12,7 +12,20 @@ return {
     'nvim-telescope/telescope.nvim',
     cmd = 'Telescope',
     version = '*',
-    dependencies = { 'nvim-lua/plenary.nvim' },
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-telescope/telescope-file-browser.nvim',
+    },
     config = conf.telescope,
-  }
+  },
+  {
+    'nvim-telescope/telescope-file-browser.nvim',
+    cmd = 'Telescope',
+    dependencies = {
+      'nvim-telescope/telescope.nvim',
+      'nvim-lua/plenary.nvim',
+      'nvim-tree/nvim-web-devicons',
+    },
+    config = conf.telescope_file_browser,
+  },
 }
