@@ -19,7 +19,7 @@ function config.nord()
 end
 
 function config.lualine()
-  local config = {
+  local lualine_conf = {
     options = {
       component_separators = '',
       section_separators = { left = '', right = ''},
@@ -43,24 +43,24 @@ function config.lualine()
   }
 
   local function ins_a(component)
-    table.insert(config.sections.lualine_a, component)
+    table.insert(lualine_conf.sections.lualine_a, component)
   end
   local function ins_b(component)
-    table.insert(config.sections.lualine_b, component)
+    table.insert(lualine_conf.sections.lualine_b, component)
   end
   local function ins_c(component)
-    table.insert(config.sections.lualine_c, component)
+    table.insert(lualine_conf.sections.lualine_c, component)
   end
 
 
   local function ins_x(component)
-    table.insert(config.sections.lualine_x, component)
+    table.insert(lualine_conf.sections.lualine_x, component)
   end
   local function ins_y(component)
-    table.insert(config.sections.lualine_y, component)
+    table.insert(lualine_conf.sections.lualine_y, component)
   end
   local function ins_z(component)
-    table.insert(config.sections.lualine_z, component)
+    table.insert(lualine_conf.sections.lualine_z, component)
   end
 
   ins_a({
@@ -93,7 +93,7 @@ function config.lualine()
     color = { gui = 'bold' }
   })
 
-  require('lualine').setup(config)
+  require('lualine').setup(lualine_conf)
 end
 
 function config.dashboard()
