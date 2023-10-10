@@ -31,6 +31,12 @@ return {
     event = 'VeryLazy',
     config = conf.lualine,
   },
+  {
+    'jonahgoldwastaken/copilot-status.nvim',
+    dependencies = { 'zbirenbaum/copilot.lua' },
+    lazy = true,
+    event = 'BufReadPost',
+  },
   -- starup screen
   {
     'glepnir/dashboard-nvim',

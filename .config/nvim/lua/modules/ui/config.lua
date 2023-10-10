@@ -79,6 +79,10 @@ function config.lualine()
   })
   ins_b({ 'location', icon = '󰍎' })
 
+  ins_x({
+    function() return require('copilot_status').status_string() end,
+    cnd = function() return require('copilot_status').enabled() end,
+  })
   ins_x({ 'encoding' })
   ins_x({ 'fileformat' })
   ins_x({ 'filetype' })
@@ -94,6 +98,19 @@ function config.lualine()
   })
 
   require('lualine').setup(lualine_conf)
+end
+
+function config.copilot()
+  require('copilot').setup({
+    icons = {
+      idle = " ",
+      error = " ",
+      offline = " ",
+      warning = "𥉉 ",
+      loading = " ",
+    },
+    debug = false,
+  })
 end
 
 function config.dashboard()
