@@ -77,3 +77,10 @@ nmap({
   -- file browser extension
   { '<leader>e', cmd('Telescope file_browser path=%:p:h select_buffer=true'), opts(noremap) },
 })
+
+-- buitin lsp
+
+nmap({
+  { 'K', cmd('lua vim.lsp.buf.hover()'), opts(noremap) },
+  { 'gd', cmd('lua vim.lsp.buf.definition()'), opts(noremap) },
+})
