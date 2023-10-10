@@ -1,7 +1,15 @@
 local config = {}
 
 function config.mason()
-  require('mason').setup({})
+  require('mason').setup({
+    ui = {
+      icons = {
+        package_installed = "✓",
+        package_pending = "➜",
+        package_uninstalled = "✗"
+      }
+    }
+  })
 end
 
 function config.mason_lspconfig()
@@ -16,5 +24,13 @@ function config.mason_lspconfig()
 end
 
 function config.nvim_lsp() end
+
+function config.lspsaga()
+  require('lspsaga').setup({})
+end
+
+function config.trouble()
+  require('trouble').setup({})
+end
 
 return config
