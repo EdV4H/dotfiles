@@ -35,13 +35,17 @@ return {
     'zbirenbaum/copilot.lua',
     cmd = "Copilot",
     event = "InsertEnter",
-    config = function()
-      -- Disable copilot suggestion
-      -- SEE: https://github.com/zbirenbaum/copilot-cmp#setup
-      require("copilot").setup({
-        suggestion = { enabled = false },
-        panel = { enabled = false },
-      })
-    end,
+    config = conf.copilot,
+  },
+  {
+    'hrsh7th/nvim-cmp',
+    config = conf.nvim_cmp,
+    dependencies = {
+      'hrsh7th/cmp-nvim-lsp',
+      'hrsh7th/cmp-buffer',
+      'hrsh7th/cmp-cmdline',
+      'zbirenbaum/copilot.lua',
+      'zbirenbaum/copilot-cmp',
+    },
   },
 }
