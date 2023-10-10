@@ -49,7 +49,10 @@ return {
       'dmitmel/cmp-cmdline-history',
       'zbirenbaum/copilot.lua',
       'zbirenbaum/copilot-cmp',
+      'saadparwaiz1/cmp_luasnip',
       'onsails/lspkind-nvim',
+      'hrsh7th/vim-vsnip',
     },
   },
+  { 'L3MON4D3/LuaSnip', event = 'InsertCharPre', config = conf.lua_snip }
 }

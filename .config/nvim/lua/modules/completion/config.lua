@@ -61,6 +61,7 @@ function config.nvim_cmp()
   })
 
   cmp.setup({
+    preselect = cmp.PreselectMode.Item,
     sources = {
       { name = 'copilot' },
       { name = 'nvim_lsp' },
@@ -87,6 +88,11 @@ function config.nvim_cmp()
           fallback()
         end
       end),
+    },
+    snippet = {
+      expand = function(args)
+        vim.fn["vsnip#anonymous"](args.body)
+      end,
     },
   })
 
@@ -119,6 +125,28 @@ function config.nvim_cmp()
         }
       },
     })
+  })
+end
+
+function config.lua_snip()
+  local ls = require('luasnip')
+  local types = require('luasnip.util.types')
+  ls.config.set_config({
+    history = true,
+    enable_autosnippets = true,
+    updateevents = 'TextChanged,TextChangedI',
+    ext_opts = {
+      [types.choiceNode] = {
+        active = {
+          virt_text = { { '<- choiceNode', 'Comment' } },
+        },
+      },
+    },
+  })
+  require('luasnip.loaders.from_lua').lazy_load({ paths = vim.fn.stdpath('config') .. '/snippets' })
+  require('luasnip.loaders.from_vscode').lazy_load()
+  require('luasnip.loaders.from_vscode').lazy_load({
+    paths = { './snippets/' },
   })
 end
 
