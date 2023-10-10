@@ -154,4 +154,10 @@ function config.dashboard()
   })
 end
 
+function config.which_key()
+  vim.o.timeout = true
+  vim.o.timeoutlen = 500
+  require('which-key').setup({})
+end
+
 return config

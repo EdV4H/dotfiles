@@ -37,5 +37,11 @@ return {
     event = 'VimEnter',
     config = conf.dashboard,
     dependencies = { {'nvim-tree/nvim-web-devicons'} }
-  }
+  },
+  -- which-key
+  {
+    'folke/which-key.nvim',
+    event = 'VimEnter',
+    config = conf.which_key,
+  },
 }
