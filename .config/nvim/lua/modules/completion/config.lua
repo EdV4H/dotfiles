@@ -44,6 +44,7 @@ end
 
 function config.nvim_cmp()
   local cmp = require('cmp')
+  local lspkind = require('lspkind')
 
   -- SEE: https://github.com/zbirenbaum/copilot-cmp#tab-completion-configuration-highly-recommended
   local has_words_before = function()
@@ -53,15 +54,26 @@ function config.nvim_cmp()
   end
 
   require('copilot_cmp').setup()
+  lspkind.init({
+    symbol_map = {
+      Copilot = "",
+    },
+  })
 
   cmp.setup({
     sources = {
       { name = 'copilot' },
       { name = 'nvim_lsp' },
+      { name = 'nvim_lsp_signature_help' },
+      { name = 'buffer' },
+      { name = 'path' },
     },
     window = {
       completion = cmp.config.window.bordered(),
       documentation = cmp.config.window.bordered(),
+    },
+    formatting = {
+      format = lspkind.cmp_format({ with_text = true, maxwidth = 50 }),
     },
     mapping = {
       ['<CR>'] = cmp.mapping.confirm({
@@ -82,6 +94,7 @@ function config.nvim_cmp()
   cmp.setup.cmdline({ '/', '?' }, {
     mapping = cmp.mapping.preset.cmdline(),
     sources = {
+      { name = 'nvim_lsp_signature_help' },
       { name = 'buffer' },
     },
   })
@@ -93,7 +106,18 @@ function config.nvim_cmp()
       { name = 'path' },
     },
     {
-      { name = 'cmdline' },
+      {
+        name = 'cmdline',
+        option = {
+          ignore_cmds = { 'Man', '!' }
+        }
+      },
+      {
+        name = 'cmdline_history',
+        option = {
+          ignore_cmds = { 'Man', '!' }
+        }
+      },
     })
   })
 end
