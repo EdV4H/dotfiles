@@ -78,9 +78,5 @@ nmap({
   { '<leader>e', cmd('Telescope file_browser path=%:p:h select_buffer=true'), opts(noremap) },
 })
 
--- buitin lsp
-
-nmap({
-  { 'K', cmd('lua vim.lsp.buf.hover()'), opts(noremap) },
-  { 'gd', cmd('lua vim.lsp.buf.definition()'), opts(noremap) },
-})
+-- buitin lsp and Lspsaga keymap is in modules/lsp/config.lua
+-- TODO: define buffer option for keymap util and migrate keymap options
