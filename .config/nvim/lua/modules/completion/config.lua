@@ -24,6 +24,8 @@ function config.mason_lspconfig()
 
         vim.keymap.set("n", "<S-k>", "<cmd>Lspsaga hover_doc<cr>", bufopts)
         vim.keymap.set("n", "<leader>ac", "<cmd>Lspsaga code_action<cr>", bufopts)
+        vim.keymap.set("n", "go", "<cmd>Lspsaga show_line_diagnostics<cr>", bufopts)
+        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, bufopts)
       end
       lspconfig[server_name].setup(opts)
     end,
@@ -39,7 +41,9 @@ function config.null_ls()
       null_ls.builtins.formatting.prettier.with({
         prefer_local = "node_modules/.bin",
       }),
-      null_ls.builtins.diagnostics.eslint_d,
+      null_ls.builtins.diagnostics.eslint_d.with({
+        root_dir = require("lspconfig").util.root_pattern(".eslintrc", ".eslintrc.js", ".eslintrc.json"),
+      }),
     },
     on_attach = function(client, bufnr)
       if client.supports_method("textDocument/formatting") then
