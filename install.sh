@@ -37,6 +37,14 @@ function main() {
   print_info "Creating symbolic links..."
   "${current_dir}/scripts/link.sh"
 
+  # Install zim
+  print_info "Installing zim..."
+  "${current_dir}/scripts/install-zim.sh"
+
+  # Install volta
+  print_info "Installing volta..."
+  "${current_dir}/scripts/install-volta.sh"
+
   # Install npm packages
   print_info "Installing npm packages..."
   "${current_dir}/scripts/install-npm-global-packages.sh"

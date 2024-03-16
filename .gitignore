@@ -25,6 +25,16 @@
 !/.github
 !/.github/**
 
+### zsh ###
+!/.zshenv
+/.config/zsh/*.local/**
+
+### zim ###
+/.config/zsh/.zim
+/.config/zsh/.zcompdump
+/.config/zsh/.zcompdump.dat
+/.config/zsh/.zcompdump.zwc
+
 ### global ###
 !/install.sh
 !/scripts/
