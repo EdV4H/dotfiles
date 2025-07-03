@@ -14,6 +14,7 @@
         );
     in
   {
+    formatter.${system} = pkgs.nixfmt-rfc-style;
     packages.${system}.my-packages = pkgs.buildEnv {
         name = "my-packages-list";
         paths = with pkgs;
