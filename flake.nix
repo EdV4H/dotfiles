@@ -36,8 +36,6 @@
         name = "my-packages-list";
         paths = with pkgs;
             [
-                git
-                curl
                 neovim
             ];
     };
