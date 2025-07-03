@@ -4,9 +4,13 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
+    home-manager = {
+    	url = "github:nix-community/home-manager";
+	inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, neovim-nightly-overlay }: 
+  outputs = { self, nixpkgs, neovim-nightly-overlay, home-manager } @ inputs: 
     let
         system = "aarch64-darwin";
         pkgs = nixpkgs.legacyPackages.aarch64-darwin.extend (
@@ -14,6 +18,19 @@
         );
     in
   {
+    homeConfigurations = {
+    	myHomeConfig = home-manager.lib.homeManagerConfiguration {
+		pkgs = import nixpkgs {
+			system = system;
+		};
+		extraSpecialArgs = {
+			inherit inputs;
+		};
+		modules = [
+			./home-manager/home.nix
+		];
+	};
+    };
     formatter.${system} = pkgs.nixfmt-rfc-style;
     packages.${system}.my-packages = pkgs.buildEnv {
         name = "my-packages-list";
