@@ -48,7 +48,7 @@
             inherit inputs;
           };
           modules = [
-            ./home-manager/home.nix
+            ./nix/home-manager/default.nix
           ];
         };
       };
