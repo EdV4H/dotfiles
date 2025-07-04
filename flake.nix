@@ -8,6 +8,10 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nix-darwin = {
+      url = "github:LnL7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -19,6 +23,7 @@
       self,
       nixpkgs,
       home-manager,
+      nix-darwin,
       treefmt-nix,
       ...
     }@inputs:
@@ -51,6 +56,11 @@
             ./nix/home-manager/default.nix
           ];
         };
+      };
+
+      darwinConfigurations.yusukemaruyama-darwin = nix-darwin.lib.darwinSystem {
+        system = system;
+        modules = [ ./nix/nix-darwin/defualt.nix ];
       };
 
       formatter.${system} = treefmt-nix.lib.mkWrapper pkgs {
