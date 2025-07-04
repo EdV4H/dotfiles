@@ -36,15 +36,15 @@
         type = "app";
         program = toString (
           pkgs.writeShellScript "update-script" ''
-            			set -e
-            			echo "Updating flake..."
-            			nix flake update
-            			echo "Updating home-manager..."
-            			nix run nixpkgs#home-manager -- switch --flake .#myHomeConfig
-				echo "Updating nix-darwin..."
-            			nix run nix-darwin -- switch --flake .#yusukemaruyama-darwin
-            			echo "Update complete!"
-            		''
+                        			set -e
+                        			echo "Updating flake..."
+                        			nix flake update
+                        			echo "Updating home-manager..."
+                        			nix run nixpkgs#home-manager -- switch --flake .#myHomeConfig
+            				echo "Updating nix-darwin..."
+                        			sudo nix run nix-darwin -- switch --flake .#yusukemaruyama-darwin
+                        			echo "Update complete!"
+                        		''
         );
       };
 
@@ -60,9 +60,9 @@
         };
       };
 
-      darwinConfigurations.yusukemaruyama-darwin = nix-darwin.lib.darwinSystem {
+      darwinConfigurations.ATR-LAP-OSX-YUSUKE-MARUYAMA = nix-darwin.lib.darwinSystem {
         system = system;
-        modules = [ ./nix/nix-darwin/defualt.nix ];
+        modules = [ ./nix/nix-darwin/default.nix ];
       };
 
       formatter.${system} = treefmt-nix.lib.mkWrapper pkgs {

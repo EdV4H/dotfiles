@@ -7,13 +7,14 @@
       max-jobs = 8;
     };
   };
-  services.nix-daemon.enable = true;
 
   system = {
+    primaryUser = "yusukemaruyama";
+    stateVersion = 6;
     defaults = {
       NSGlobalDomain.AppleShowAllExtensions = true;
       finder = {
-        ApoleShowAllFiles = true;
+        AppleShowAllFiles = true;
         AppleShowAllExtensions = true;
       };
       dock = {
