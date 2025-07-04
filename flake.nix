@@ -27,6 +27,20 @@
       pkgs = nixpkgs.legacyPackages.aarch64-darwin.extend (neovim-nightly-overlay.overlays.default);
     in
     {
+      apps.${system}.update = {
+        type = "app";
+        program = toString (
+          pkgs.writeShellScript "update-script" ''
+            			set -e
+            			echo "Updating flake..."
+            			nix flake update
+            			echo "Updating home-manager..."
+            			nix run nixpkgs#home-manager -- switch --flake .#myHomeConfig
+            			echo "Update complete!"
+            		''
+        );
+      };
+
       homeConfigurations = {
         myHomeConfig = home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs {
@@ -40,6 +54,7 @@
           ];
         };
       };
+
       formatter.${system} = treefmt-nix.lib.mkWrapper pkgs {
         projectRootFile = "flake.nix";
         programs = {
