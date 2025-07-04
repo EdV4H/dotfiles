@@ -1,31 +1,31 @@
 {
-    inputs,
-    lib,
-    config,
-    pkgs,
-    ...
+  inputs,
+  lib,
+  config,
+  pkgs,
+  ...
 }:
-    let
-    	username = "yusukemaruyama";
-    in
+let
+  username = "yusukemaruyama";
+in
 {
-    nixpkgs = {
-    	config = {
-		allowUnfree = true;
-	};
+  nixpkgs = {
+    config = {
+      allowUnfree = true;
     };
+  };
 
-    home = {
-    	username = username;
-	homeDirectory = "/Users/${username}";
+  home = {
+    username = username;
+    homeDirectory = "/Users/${username}";
 
-	stateVersion = "25.05";
+    stateVersion = "25.05";
 
-	packages = with pkgs; [
-		git
-		curl
-	];
-    };
+    packages = with pkgs; [
+      git
+      curl
+    ];
+  };
 
-    programs.home-manager.enable = true;
+  programs.home-manager.enable = true;
 }
