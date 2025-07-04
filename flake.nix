@@ -8,9 +8,13 @@
     	url = "github:nix-community/home-manager";
 	inputs.nixpkgs.follows = "nixpkgs";
     };
+    treefmt-nix = {
+    	url = "github:numtide/treefmt-nix";
+	inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, neovim-nightly-overlay, home-manager } @ inputs: 
+  outputs = { self, nixpkgs, neovim-nightly-overlay, home-manager, treefmt-nix } @ inputs: 
     let
         system = "aarch64-darwin";
         pkgs = nixpkgs.legacyPackages.aarch64-darwin.extend (
@@ -31,7 +35,12 @@
 		];
 	};
     };
-    formatter.${system} = pkgs.nixfmt-rfc-style;
+    formatter.${system} = treefmt-nix.lib.mkWrapper pkgs {
+    	projectRootFile = "flake.nix";
+	programs = {
+		nixfmt.enable = true;
+	};
+    };
     packages.${system}.my-packages = pkgs.buildEnv {
         name = "my-packages-list";
         paths = with pkgs;
