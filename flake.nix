@@ -18,13 +18,13 @@
     {
       self,
       nixpkgs,
-      neovim-nightly-overlay,
       home-manager,
       treefmt-nix,
+      ...
     }@inputs:
     let
       system = "aarch64-darwin";
-      pkgs = nixpkgs.legacyPackages.aarch64-darwin.extend (neovim-nightly-overlay.overlays.default);
+      pkgs = import nixpkgs { inherit system; };
     in
     {
       apps.${system}.update = {
@@ -43,9 +43,7 @@
 
       homeConfigurations = {
         myHomeConfig = home-manager.lib.homeManagerConfiguration {
-          pkgs = import nixpkgs {
-            system = system;
-          };
+          pkgs = pkgs;
           extraSpecialArgs = {
             inherit inputs;
           };
