@@ -10,6 +10,9 @@ let
 in
 {
   nixpkgs = {
+    overlays = [
+      inputs.neovim-nightly-overlay.overlays.default
+    ];
     config = {
       allowUnfree = true;
     };
@@ -24,6 +27,7 @@ in
     packages = with pkgs; [
       git
       curl
+      neovim
     ];
   };
 

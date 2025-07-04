@@ -46,11 +46,5 @@
           nixfmt.enable = true;
         };
       };
-      packages.${system}.my-packages = pkgs.buildEnv {
-        name = "my-packages-list";
-        paths = with pkgs; [
-          neovim
-        ];
-      };
     };
 }
