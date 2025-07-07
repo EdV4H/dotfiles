@@ -12,6 +12,7 @@ in
   nixpkgs = {
     overlays = [
       inputs.neovim-nightly-overlay.overlays.default
+      inputs.brew-nix.overlays.default
     ];
     config = {
       allowUnfree = true;
@@ -26,8 +27,10 @@ in
 
     packages = with pkgs; [
       git
+      gh
       curl
       neovim
+      brewCasks.raycast
     ];
   };
 
