@@ -33,6 +33,9 @@ in
       neovim
       docker
       brewCasks.raycast
+      brewCasks.docker-desktop
+      brewCasks.amazon-q
+      brewCasks.wezterm
     ];
   };
 
