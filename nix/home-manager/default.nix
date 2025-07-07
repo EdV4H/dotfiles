@@ -29,8 +29,10 @@ in
       git
       gh
       curl
+      tmux
       neovim
       brewCasks.raycast
+      brewCasks.docker
     ];
   };
 
