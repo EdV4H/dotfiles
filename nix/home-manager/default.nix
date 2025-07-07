@@ -31,8 +31,8 @@ in
       curl
       tmux
       neovim
+      docker
       brewCasks.raycast
-      brewCasks.docker
     ];
   };
 
