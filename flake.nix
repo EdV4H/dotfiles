@@ -42,7 +42,7 @@
                         			echo "Updating home-manager..."
                         			nix run nixpkgs#home-manager -- switch --flake .#myHomeConfig
             				echo "Updating nix-darwin..."
-                        			sudo nix run nix-darwin -- switch --flake .#yusukemaruyama-darwin
+                        			sudo darwin-rebuild switch --flake .#ATR-LAP-OSX-YUSUKE-MARUYAMA
                         			echo "Update complete!"
                         		''
         );
