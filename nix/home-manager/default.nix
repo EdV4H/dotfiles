@@ -12,7 +12,6 @@ in
   nixpkgs = {
     overlays = [
       inputs.neovim-nightly-overlay.overlays.default
-      inputs.brew-nix.overlays.default
     ];
     config = {
       allowUnfree = true;
@@ -32,10 +31,6 @@ in
       tmux
       neovim
       docker
-      brewCasks.raycast
-      brewCasks.docker-desktop
-      brewCasks.amazon-q
-      brewCasks.wezterm
     ];
   };
 

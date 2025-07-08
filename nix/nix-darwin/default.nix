@@ -24,4 +24,17 @@
       };
     };
   };
+
+  homebrew = {
+    enable = true;
+    onActivation = {
+      autoUpdate = true;
+      cleanup = "uninstall";
+    };
+    casks = [
+      "docker-desktop"
+      "wezterm@nightly"
+      "raycast"
+    ];
+  };
 }

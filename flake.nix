@@ -12,14 +12,6 @@
       url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    brew-nix = {
-      url = "github:BatteredBunny/brew-nix";
-      inputs.brew-api.follows = "brew-api";
-    };
-    brew-api = {
-      url = "github:BatteredBunny/brew-api";
-      flake = false;
-    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
