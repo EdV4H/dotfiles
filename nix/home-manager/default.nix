@@ -31,6 +31,7 @@ in
       tmux
       neovim
       docker
+      lazygit
     ];
   };
 
