@@ -34,8 +34,15 @@ in
       lazygit
     ];
 
+    file.".config/nvim" = {
+      source = ../../nvim;
+      recursive = true;
+    };
   };
 
   programs.home-manager.enable = true;
   programs.wezterm = import ./programs/wezterm/default.nix;
+  programs.neovim = import ./programs/neovim.nix {
+    inherit pkgs lib;
+  };
 }
