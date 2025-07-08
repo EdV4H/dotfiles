@@ -16,7 +16,7 @@ end
 config.window_background_opacity = 1
 
 -- Font
-config.font = wezterm.font("Moralerspace", { italic = false })
+config.font = wezterm.font("HackGen Console NF", {weight="Regular", stretch="Normal", style="Normal"})
 config.font_size = 14.0
 config.use_ime = true
 

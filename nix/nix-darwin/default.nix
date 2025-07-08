@@ -37,4 +37,10 @@
       "raycast"
     ];
   };
+
+  fonts = {
+    packages = with pkgs; [
+      hackgen-nf-font
+    ];
+  };
 }
