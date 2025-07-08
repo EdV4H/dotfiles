@@ -33,7 +33,9 @@ in
       docker
       lazygit
     ];
+
   };
 
   programs.home-manager.enable = true;
+  programs.wezterm = import ./programs/wezterm/default.nix;
 }
