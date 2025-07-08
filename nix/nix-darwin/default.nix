@@ -35,6 +35,9 @@
       "docker-desktop"
       "wezterm@nightly"
       "raycast"
+      "figma"
+      "logi-options+"
+      "amethyst"
     ];
   };
 
