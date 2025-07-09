@@ -38,6 +38,7 @@
       "figma"
       "logi-options+"
       "amethyst"
+      "arc"
     ];
   };
 
