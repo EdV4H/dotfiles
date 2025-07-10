@@ -5,6 +5,7 @@ require('telescope').setup({
     file_browser = {
       theme = "ivy",
       hijack_netrw = true,
+      respect_gitignore = false,  -- Show files ignored by git
       mappings = {
         ["i"] = {
           -- your custom insert mode mappings

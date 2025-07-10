@@ -7,7 +7,7 @@ keymap.set({"n", "v"}, ";", ":", { desc = "Command mode" })
 keymap.set({"n", "v"}, ":", ";", { desc = "Repeat last f/F/t/T" })
 
 -- File explorer
-keymap.set("n", "<leader>e", ":Telescope file_browser path=%:p:h select_buffer=true<CR>", { desc = "File browser (current dir)" })
+keymap.set("n", "<leader>e", ":Telescope file_browser path=%:p:h select_buffer=true hidden=true respect_gitignore=false<CR>", { desc = "File browser (current dir)" })
 
 -- Telescope
 keymap.set("n", "<leader>ff", ":Telescope smart_open<CR>", { desc = "Smart open files" })
@@ -16,7 +16,7 @@ keymap.set("n", "<leader>fg", ":Telescope live_grep<CR>", { desc = "Live grep" }
 keymap.set("n", "<leader>fh", ":Telescope help_tags<CR>", { desc = "Help tags" })
 
 -- Buffer management
-keymap.set("n", "<leader>bb", ":Telescope buffers<CR>", { desc = "List buffers" })
+keymap.set("n", "<leader>b", ":Telescope buffers<CR>", { desc = "List buffers" })
 keymap.set("n", "<leader>bd", ":bdelete<CR>", { desc = "Delete buffer" })
 keymap.set("n", "<leader>bn", ":bnext<CR>", { desc = "Next buffer" })
 keymap.set("n", "<leader>bp", ":bprevious<CR>", { desc = "Previous buffer" })
