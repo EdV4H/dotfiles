@@ -30,6 +30,9 @@ end, 100)
 -- Load navigation plugins
 require('plugins.flash')
 
+-- Load no-neck-pain.nvim
+require('plugins.no-neck-pain')
+
 -- Load custom configurations if they exist
 local config_path = vim.fn.stdpath('config') .. '/lua/conf'
 if vim.fn.isdirectory(config_path) == 1 then

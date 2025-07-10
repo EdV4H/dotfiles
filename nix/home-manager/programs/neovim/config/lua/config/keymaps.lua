@@ -100,3 +100,8 @@ keymap.set({ "n", "x", "o" }, "T", function() require("flash").jump({ search = {
 keymap.set({ "n", "x", "o" }, "gf", function() require("flash").jump() end, { desc = "Flash jump (multi-char)" })
 keymap.set({ "n", "x", "o" }, "gF", function() require("flash").treesitter() end, { desc = "Flash Treesitter" })
 keymap.set("c", "<c-s>", function() require("flash").toggle() end, { desc = "Toggle Flash Search" })
+
+-- No-neck-pain toggle
+keymap.set("n", "<leader>nn", ":NoNeckPain<CR>", { desc = "Toggle No Neck Pain" })
+keymap.set("n", "<leader>nw", ":NoNeckPainWidthUp<CR>", { desc = "Increase width" })
+keymap.set("n", "<leader>nW", ":NoNeckPainWidthDown<CR>", { desc = "Decrease width" })

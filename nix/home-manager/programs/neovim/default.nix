@@ -48,6 +48,9 @@ in
 
     # Navigation
     flash-nvim
+    
+    # UI/UX
+    no-neck-pain-nvim
 
     # Colorschemes
     tokyonight-nvim
