@@ -7,6 +7,7 @@
 }:
 let
   username = "yusukemaruyama";
+  pwd = "${config.home.homeDirectory}/dotfiles-nix/home-manager/console/neovim";
 in
 {
   nixpkgs = {
@@ -28,6 +29,8 @@ in
       git
       gh
       curl
+      jq
+      ripgrep
       tmux
       neovim
       docker
@@ -41,6 +44,7 @@ in
 
     sessionVariables = {
       VOLTA_HOME = "$HOME/.volta";
+      VOLTA_FEATURE_PNPM = "1";
       GOOGLE_CLOUD_PROJECT = "atrae-engineer-gu7335mbf";
     };
 
@@ -67,5 +71,13 @@ in
       fi
     '';
 
+  };
+
+  programs.neovim = import ./programs/neovim/default.nix {
+    inherit pkgs;
+  };
+
+  xdg.configFile."nvim/lua/conf" = {
+    source = config.lib.file.mkOutOfStoreSymlink "${pwd}/conf";
   };
 }
