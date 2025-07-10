@@ -77,6 +77,17 @@ in
     inherit pkgs;
   };
 
+  # Copy Neovim configuration files
+  xdg.configFile."nvim/init.lua" = {
+    source = ./programs/neovim/config/init.lua;
+  };
+  
+  xdg.configFile."nvim/lua" = {
+    source = ./programs/neovim/config/lua;
+    recursive = true;
+  };
+
+  # Legacy symlink for backward compatibility
   xdg.configFile."nvim/lua/conf" = {
     source = config.lib.file.mkOutOfStoreSymlink "${pwd}/conf";
   };
