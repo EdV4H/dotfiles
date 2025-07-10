@@ -40,6 +40,15 @@ in
       config = builtins.readFile "${neovimConfigDir}/lua/plugins/which-key.lua";
     }
 
+    # UI enhancements
+    nui-nvim
+    nvim-notify
+    {
+      plugin = noice-nvim;
+      type = "lua";
+      config = builtins.readFile "${neovimConfigDir}/lua/plugins/noice.lua";
+    }
+
     # Colorschemes
     tokyonight-nvim
     gruvbox-nvim
