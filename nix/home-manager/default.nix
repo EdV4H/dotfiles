@@ -32,7 +32,6 @@ in
       jq
       ripgrep
       tmux
-      neovim
       docker
       lazygit
       claude-code
