@@ -2,12 +2,12 @@
 
 {
   enable = true;
-  
+
   # Enable useful features
   enableCompletion = true;
   autosuggestion.enable = true;
   syntaxHighlighting.enable = true;
-  
+
   # History configuration
   history = {
     size = 100000;
@@ -17,14 +17,14 @@
     ignoreSpace = true;
     share = true;
   };
-  
+
   # Shell aliases
   shellAliases = {
     # Navigation
     ".." = "cd ..";
     "..." = "cd ../..";
     "...." = "cd ../../..";
-    
+
     # Git shortcuts
     g = "git";
     gs = "git status";
@@ -34,41 +34,41 @@
     gp = "git push";
     gl = "git pull";
     lg = "lazygit";
-    
+
     # Directory listing
     ls = "ls --color=auto";
     la = "ls -la";
     ll = "ls -l";
     lt = "ls -lat";
-    
+
     # Safety features
     rm = "rm -i";
     cp = "cp -i";
     mv = "mv -i";
-    
+
     # Utilities
     cl = "clear";
     h = "history";
     hg = "history | grep";
-    
+
     # Claude
     ccd = "claude --dangerously-skip-permissions";
-    
+
     # Neovim
     v = "nvim";
     vi = "nvim";
     vim = "nvim";
-    
+
     # Quick edits
     zshrc = "nvim ~/.zshrc";
     zshconf = "nvim ~/dotfiles/nix/home-manager/programs/zsh/default.nix";
     nixconf = "nvim ~/dotfiles/flake.nix";
-    
+
     # System
     update = "cd ~/dotfiles && nix run .#update";
     rebuild = "cd ~/dotfiles && nix run .#update";
   };
-  
+
   # Session variables
   sessionVariables = {
     EDITOR = "nvim";
@@ -76,13 +76,13 @@
     PAGER = "less";
     LESS = "-R";
   };
-  
+
   # Init extra configuration
-  initExtra = ''
+  initContent = ''
     # Enable vi mode
     bindkey -v
     export KEYTIMEOUT=1
-    
+
     # Better vi mode indicators
     function zle-keymap-select {
       if [[ ''${KEYMAP} == vicmd ]] || [[ $1 = 'block' ]]; then
@@ -92,42 +92,42 @@
       fi
     }
     zle -N zle-keymap-select
-    
+
     # Use beam cursor on startup
     echo -ne '\e[5 q'
-    
+
     # Edit command line in vim
     autoload -z edit-command-line
     zle -N edit-command-line
     bindkey -M vicmd v edit-command-line
-    
+
     # Better history search
     bindkey '^R' history-incremental-search-backward
     bindkey '^S' history-incremental-search-forward
     bindkey '^P' up-line-or-search
     bindkey '^N' down-line-or-search
-    
+
     # Key bindings for autosuggestions
     bindkey '^ ' autosuggest-accept
     bindkey '^f' autosuggest-accept
-    
+
     # FZF integration if available
     if command -v fzf &> /dev/null; then
       source ${pkgs.fzf}/share/fzf/key-bindings.zsh
       source ${pkgs.fzf}/share/fzf/completion.zsh
     fi
-    
+
     # Directory shortcuts
     hash -d dotfiles="$HOME/dotfiles"
     hash -d nix="$HOME/dotfiles/nix"
     hash -d downloads="$HOME/Downloads"
     hash -d projects="$HOME/Projects"
-    
+
     # Useful functions
     function mkcd() {
       mkdir -p "$1" && cd "$1"
     }
-    
+
     function extract() {
       if [ -f "$1" ]; then
         case "$1" in
@@ -147,12 +147,12 @@
         echo "'$1' is not a valid file"
       fi
     }
-    
+
     # Quick backup function
     function backup() {
       cp "$1" "$1.bak"
     }
-    
+
     # Find and replace in current directory
     function find-replace() {
       if [ $# -ne 2 ]; then
@@ -162,22 +162,22 @@
       rg -l "$1" | xargs sed -i "" "s/$1/$2/g"
     }
   '';
-  
+
   # Environment variables
   envExtra = ''
     # Set PATH
     export PATH="$HOME/.local/bin:$PATH"
-    
+
     # Load Nix profile
     if [ -e ~/.nix-profile/etc/profile.d/nix.sh ]; then
       . ~/.nix-profile/etc/profile.d/hm-session-vars.sh
     fi
-    
+
     # Set default language
     export LANG="en_US.UTF-8"
     export LC_ALL="en_US.UTF-8"
   '';
-  
+
   # Oh-my-zsh configuration
   oh-my-zsh = {
     enable = true;

@@ -74,7 +74,7 @@ in
   xdg.configFile."nvim/init.lua" = {
     source = ./programs/neovim/config/init.lua;
   };
-  
+
   xdg.configFile."nvim/lua" = {
     source = ./programs/neovim/config/lua;
     recursive = true;
