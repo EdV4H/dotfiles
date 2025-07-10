@@ -17,6 +17,14 @@ require('claude-code').setup({
       relativenumber = false,
       signcolumn = "no",
     },
+    
+    -- Terminal keymaps
+    keymaps = {
+      -- Exit terminal mode with ESC
+      exit = "<Esc>",
+      -- Alternative exit with Ctrl+\ Ctrl+n
+      exit_alt = "<C-\\><C-n>",
+    },
   },
   
   -- File refresh configuration
@@ -32,12 +40,19 @@ require('claude-code').setup({
     -- Automatically detect git project root
     auto_detect = true,
   },
-  
-  -- Keymaps
-  keymaps = {
-    -- Toggle Claude Code terminal
-    toggle = "<C-,>",
-    -- Close terminal
-    close = "<Esc>",
-  },
+})
+
+-- Set up terminal keymaps for Claude Code terminal
+vim.api.nvim_create_autocmd("TermOpen", {
+  pattern = "*claude*",
+  callback = function()
+    local opts = { buffer = 0 }
+    -- Exit terminal mode with ESC
+    vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], opts)
+    -- Navigate to other windows from terminal
+    vim.keymap.set('t', '<C-h>', [[<C-\><C-n><C-w>h]], opts)
+    vim.keymap.set('t', '<C-j>', [[<C-\><C-n><C-w>j]], opts)
+    vim.keymap.set('t', '<C-k>', [[<C-\><C-n><C-w>k]], opts)
+    vim.keymap.set('t', '<C-l>', [[<C-\><C-n><C-w>l]], opts)
+  end,
 })

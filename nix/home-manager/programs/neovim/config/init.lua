@@ -15,6 +15,9 @@ require('config.lsp')
 -- Load Copilot before completion setup
 require('plugins.copilot')
 
+-- Load Claude Code
+require('plugins.claude-code')
+
 -- Load completion setup
 require('config.completion')
 
