@@ -55,6 +55,13 @@ in
       config = builtins.readFile "${neovimConfigDir}/lua/plugins/nvim-tree.lua";
     }
 
+    # Telescope file browser
+    {
+      plugin = telescope-file-browser-nvim;
+      type = "lua";
+      config = builtins.readFile "${neovimConfigDir}/lua/plugins/telescope-file-browser.lua";
+    }
+
     # Status line
     {
       plugin = lualine-nvim;

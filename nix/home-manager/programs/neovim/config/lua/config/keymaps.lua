@@ -7,7 +7,7 @@ keymap.set({"n", "v"}, ";", ":", { desc = "Command mode" })
 keymap.set({"n", "v"}, ":", ";", { desc = "Repeat last f/F/t/T" })
 
 -- File explorer
-keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", { desc = "Toggle file explorer" })
+keymap.set("n", "<leader>e", ":Telescope file_browser<CR>", { desc = "File browser" })
 
 -- Telescope
 keymap.set("n", "<leader>ff", ":Telescope find_files<CR>", { desc = "Find files" })
