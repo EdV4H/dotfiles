@@ -39,6 +39,12 @@ in
       volta
       amazon-q-cli
       google-cloud-sdk
+      fzf
+      zoxide
+      eza
+      bat
+      fd
+      direnv
     ];
 
     sessionVariables = {
@@ -56,20 +62,8 @@ in
   programs.wezterm = import ./programs/wezterm/default.nix;
 
   programs.bash.enable = false;
-  programs.zsh = {
-    enable = true;
-    shellAliases = {
-      lg = "lazygit";
-      la = "ls -a";
-      ccd = "claude --dangerously-skip-permissions";
-      cl = "clear";
-    };
-    envExtra = ''
-      if [ -e ~/.nix-profile/etc/profile.d/nix.sh ]; then
-      . ~/.nix-profile/etc/profile.d/hm-session-vars.sh
-      fi
-    '';
-
+  programs.zsh = import ./programs/zsh/default.nix {
+    inherit pkgs config;
   };
 
   programs.neovim = import ./programs/neovim/default.nix {
