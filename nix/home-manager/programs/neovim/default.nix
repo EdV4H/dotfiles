@@ -89,6 +89,13 @@ in
 
     # Git integration
     lazygit-nvim
+
+    # AI assistant
+    {
+      plugin = claude-code-nvim;
+      type = "lua";
+      config = builtins.readFile "${neovimConfigDir}/lua/plugins/claude-code.lua";
+    }
   ];
 
   # Source external init.lua

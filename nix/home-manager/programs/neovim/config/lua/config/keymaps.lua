@@ -39,3 +39,8 @@ keymap.set("n", "<leader>lgb", ":LazyGitFilterCurrentFile<CR>", { desc = "LazyGi
 
 -- Theme switcher (using Telescope)
 keymap.set("n", "<leader>th", ":Telescope colorscheme<CR>", { desc = "Switch theme" })
+
+-- Claude Code
+keymap.set("n", "<leader>cc", ":ClaudeCode<CR>", { desc = "Toggle Claude Code" })
+keymap.set("n", "<leader>ccc", ":ClaudeCodeContinue<CR>", { desc = "Claude Code Continue" })
+keymap.set("n", "<leader>ccr", ":ClaudeCodeReview<CR>", { desc = "Claude Code Review" })
