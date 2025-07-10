@@ -101,6 +101,7 @@ in
 
     # Fuzzy finder
     telescope-nvim
+    smart-open-nvim
 
     # Git integration
     lazygit-nvim

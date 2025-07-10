@@ -10,7 +10,8 @@ keymap.set({"n", "v"}, ":", ";", { desc = "Repeat last f/F/t/T" })
 keymap.set("n", "<leader>e", ":Telescope file_browser path=%:p:h select_buffer=true<CR>", { desc = "File browser (current dir)" })
 
 -- Telescope
-keymap.set("n", "<leader>ff", ":Telescope find_files<CR>", { desc = "Find files" })
+keymap.set("n", "<leader>ff", ":Telescope smart_open<CR>", { desc = "Smart open files" })
+keymap.set("n", "<leader>fo", ":Telescope find_files<CR>", { desc = "Find files (old)" })
 keymap.set("n", "<leader>fg", ":Telescope live_grep<CR>", { desc = "Live grep" })
 keymap.set("n", "<leader>fh", ":Telescope help_tags<CR>", { desc = "Help tags" })
 

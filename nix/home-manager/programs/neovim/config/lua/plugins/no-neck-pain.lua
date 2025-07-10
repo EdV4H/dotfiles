@@ -13,7 +13,7 @@ no_neck_pain.setup({
   -- Whether to automatically enable no-neck-pain when entering a buffer
   autocmds = {
     -- Enable on entering vim
-    enableOnVimEnter = false,
+    enableOnVimEnter = true,
     -- Enable when entering a tab
     enableOnTabEnter = false,
   },
