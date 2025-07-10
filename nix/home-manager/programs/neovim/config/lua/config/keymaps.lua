@@ -88,3 +88,15 @@ keymap.set("n", "<leader>cp", ":Copilot panel<CR>", { desc = "Copilot panel" })
 keymap.set("n", "<leader>cs", ":Copilot status<CR>", { desc = "Copilot status" })
 keymap.set("n", "<leader>ce", ":Copilot enable<CR>", { desc = "Copilot enable" })
 keymap.set("n", "<leader>cd", ":Copilot disable<CR>", { desc = "Copilot disable" })
+
+-- Flash.nvim navigation
+-- Override f/F/t/T for enhanced functionality
+keymap.set({ "n", "x", "o" }, "f", function() require("flash").jump({ search = { mode = "search", max_length = 1 } }) end, { desc = "Flash f" })
+keymap.set({ "n", "x", "o" }, "F", function() require("flash").jump({ search = { mode = "search", max_length = 1, forward = false } }) end, { desc = "Flash F" })
+keymap.set({ "n", "x", "o" }, "t", function() require("flash").jump({ search = { mode = "search", max_length = 1 }, jump = { offset = 1 } }) end, { desc = "Flash t" })
+keymap.set({ "n", "x", "o" }, "T", function() require("flash").jump({ search = { mode = "search", max_length = 1, forward = false }, jump = { offset = -1 } }) end, { desc = "Flash T" })
+
+-- Additional flash commands
+keymap.set({ "n", "x", "o" }, "gf", function() require("flash").jump() end, { desc = "Flash jump (multi-char)" })
+keymap.set({ "n", "x", "o" }, "gF", function() require("flash").treesitter() end, { desc = "Flash Treesitter" })
+keymap.set("c", "<c-s>", function() require("flash").toggle() end, { desc = "Toggle Flash Search" })

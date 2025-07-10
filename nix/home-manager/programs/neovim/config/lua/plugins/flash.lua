@@ -153,7 +153,7 @@ flash.setup({
       -- hide after jump when not using jump labels
       autohide = false,
       -- show jump labels
-      jump_labels = false,
+      jump_labels = true,
       -- set to `false` to use the current line only
       multi_line = true,
       -- When using jump labels, don't use these keys
@@ -163,7 +163,7 @@ flash.setup({
       -- by removing them from the list.
       -- If you rather use another key, you can map them
       -- to something else, e.g., { [";"] = "L", [","] = H }
-      keys = { "f", "F", "t", "T", ";", "," },
+      keys = {},  -- Disable default keys, we'll use custom mappings
       ---@alias Flash.CharActions table<string, "next" | "prev" | "right" | "left">
       -- The direction for `prev` and `next` is determined by the motion.
       -- `left` and `right` are always left and right.
@@ -208,9 +208,3 @@ flash.setup({
   },
 })
 
--- Keymaps
-vim.keymap.set({ "n", "x", "o" }, "s", function() flash.jump() end, { desc = "Flash" })
-vim.keymap.set({ "n", "x", "o" }, "S", function() flash.treesitter() end, { desc = "Flash Treesitter" })
-vim.keymap.set("o", "r", function() flash.remote() end, { desc = "Remote Flash" })
-vim.keymap.set({ "o", "x" }, "R", function() flash.treesitter_search() end, { desc = "Treesitter Search" })
-vim.keymap.set("c", "<c-s>", function() flash.toggle() end, { desc = "Toggle Flash Search" })
