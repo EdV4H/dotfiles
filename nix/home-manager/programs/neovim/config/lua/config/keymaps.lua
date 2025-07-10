@@ -82,3 +82,9 @@ keymap.set("n", "<leader>th", ":Telescope colorscheme<CR>", { desc = "Switch the
 keymap.set("n", "<leader>cc", ":ClaudeCode<CR>", { desc = "Toggle Claude Code" })
 keymap.set("n", "<leader>ccc", ":ClaudeCodeContinue<CR>", { desc = "Claude Code Continue" })
 keymap.set("n", "<leader>ccr", ":ClaudeCodeReview<CR>", { desc = "Claude Code Review" })
+
+-- GitHub Copilot
+keymap.set("n", "<leader>cp", ":Copilot panel<CR>", { desc = "Copilot panel" })
+keymap.set("n", "<leader>cs", ":Copilot status<CR>", { desc = "Copilot status" })
+keymap.set("n", "<leader>ce", ":Copilot enable<CR>", { desc = "Copilot enable" })
+keymap.set("n", "<leader>cd", ":Copilot disable<CR>", { desc = "Copilot disable" })
