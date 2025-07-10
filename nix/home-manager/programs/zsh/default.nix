@@ -5,7 +5,7 @@
   
   # Enable useful features
   enableCompletion = true;
-  autosuggestions.enable = true;
+  autosuggestion.enable = true;
   syntaxHighlighting.enable = true;
   
   # History configuration

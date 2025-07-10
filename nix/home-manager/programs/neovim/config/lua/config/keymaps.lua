@@ -23,7 +23,23 @@ keymap.set("n", "<leader>bD", ":bufdo bd<CR>", { desc = "Delete all buffers" })
 keymap.set("n", "]b", ":bnext<CR>", { desc = "Next buffer" })
 keymap.set("n", "[b", ":bprevious<CR>", { desc = "Previous buffer" })
 
--- Window navigation
+-- Window splits and navigation
+keymap.set("n", "ss", ":split<CR><C-w>w", { desc = "Split horizontal" })
+keymap.set("n", "sv", ":vsplit<CR><C-w>w", { desc = "Split vertical" })
+keymap.set("n", "sh", "<C-w>h", { desc = "Navigate left" })
+keymap.set("n", "sk", "<C-w>k", { desc = "Navigate up" })
+keymap.set("n", "sj", "<C-w>j", { desc = "Navigate down" })
+keymap.set("n", "sl", "<C-w>l", { desc = "Navigate right" })
+keymap.set("n", "se", "<C-w>=", { desc = "Equal splits" })
+keymap.set("n", "sx", ":close<CR>", { desc = "Close split" })
+
+-- Window resize
+keymap.set("n", "<C-Up>", ":resize +2<CR>", { desc = "Increase height" })
+keymap.set("n", "<C-Down>", ":resize -2<CR>", { desc = "Decrease height" })
+keymap.set("n", "<C-Left>", ":vertical resize -2<CR>", { desc = "Decrease width" })
+keymap.set("n", "<C-Right>", ":vertical resize +2<CR>", { desc = "Increase width" })
+
+-- Keep Ctrl+hjkl for navigation (alternative)
 keymap.set("n", "<C-h>", "<C-w>h", { desc = "Navigate left" })
 keymap.set("n", "<C-j>", "<C-w>j", { desc = "Navigate down" })
 keymap.set("n", "<C-k>", "<C-w>k", { desc = "Navigate up" })
