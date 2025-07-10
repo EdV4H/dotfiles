@@ -12,6 +12,9 @@ require('config.colorscheme')
 -- Load LSP configuration
 require('config.lsp')
 
+-- Load Copilot before completion setup
+require('plugins.copilot')
+
 -- Load completion setup
 require('config.completion')
 

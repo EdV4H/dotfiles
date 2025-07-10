@@ -103,12 +103,12 @@ in
       type = "lua";
       config = builtins.readFile "${neovimConfigDir}/lua/plugins/claude-code.lua";
     }
-    copilot-vim
     {
       plugin = copilot-lua;
       type = "lua";
       config = builtins.readFile "${neovimConfigDir}/lua/plugins/copilot.lua";
     }
+    copilot-cmp
   ];
 
   # Source external init.lua
