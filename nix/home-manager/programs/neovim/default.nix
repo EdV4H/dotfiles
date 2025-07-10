@@ -34,6 +34,11 @@ in
     # Essential plugins
     plenary-nvim
     nvim-web-devicons
+    {
+      plugin = which-key-nvim;
+      type = "lua";
+      config = builtins.readFile "${neovimConfigDir}/lua/plugins/which-key.lua";
+    }
 
     # Colorschemes
     tokyonight-nvim
