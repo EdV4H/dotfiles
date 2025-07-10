@@ -30,3 +30,12 @@ keymap.set("n", "<C-d>", "<C-d>zz")
 keymap.set("n", "<C-u>", "<C-u>zz")
 keymap.set("n", "n", "nzzzv")
 keymap.set("n", "N", "Nzzzv")
+
+-- Lazygit
+keymap.set("n", "<leader>lg", ":LazyGit<CR>", { desc = "Open LazyGit" })
+keymap.set("n", "<leader>lgc", ":LazyGitConfig<CR>", { desc = "LazyGit Config" })
+keymap.set("n", "<leader>lgf", ":LazyGitFilter<CR>", { desc = "LazyGit Filter" })
+keymap.set("n", "<leader>lgb", ":LazyGitFilterCurrentFile<CR>", { desc = "LazyGit Current File" })
+
+-- Theme switcher
+keymap.set("n", "<leader>th", ":Themery<CR>", { desc = "Theme switcher" })

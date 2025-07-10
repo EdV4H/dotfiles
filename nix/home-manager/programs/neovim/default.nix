@@ -38,8 +38,12 @@ in
     plenary-nvim
     nvim-web-devicons
 
-    # Colorscheme
+    # Colorschemes
     tokyonight-nvim
+    gruvbox-nvim
+    catppuccin-nvim
+    kanagawa-nvim
+    rose-pine
 
     # Treesitter
     {
@@ -82,6 +86,16 @@ in
 
     # Fuzzy finder
     telescope-nvim
+
+    # Git integration
+    lazygit-nvim
+
+    # Theme switcher
+    {
+      plugin = themery-nvim;
+      type = "lua";
+      config = builtins.readFile "${neovimConfigDir}/lua/plugins/themery.lua";
+    }
   ];
 
   # Source external init.lua
