@@ -89,6 +89,11 @@ in
 
     # Git integration
     lazygit-nvim
+    {
+      plugin = gitsigns-nvim;
+      type = "lua";
+      config = builtins.readFile "${neovimConfigDir}/lua/plugins/gitsigns.lua";
+    }
 
     # AI assistant
     {

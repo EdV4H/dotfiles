@@ -61,6 +61,20 @@ keymap.set("n", "<leader>lgc", ":LazyGitConfig<CR>", { desc = "LazyGit Config" }
 keymap.set("n", "<leader>lgf", ":LazyGitFilter<CR>", { desc = "LazyGit Filter" })
 keymap.set("n", "<leader>lgb", ":LazyGitFilterCurrentFile<CR>", { desc = "LazyGit Current File" })
 
+-- Git blame and signs
+keymap.set("n", "<leader>gb", ":Gitsigns toggle_current_line_blame<CR>", { desc = "Toggle git blame" })
+keymap.set("n", "<leader>gB", ":Gitsigns blame_line<CR>", { desc = "Git blame line (popup)" })
+keymap.set("n", "<leader>gp", ":Gitsigns preview_hunk<CR>", { desc = "Preview git hunk" })
+keymap.set("n", "<leader>gr", ":Gitsigns reset_hunk<CR>", { desc = "Reset git hunk" })
+keymap.set("n", "<leader>gR", ":Gitsigns reset_buffer<CR>", { desc = "Reset git buffer" })
+keymap.set("n", "<leader>gs", ":Gitsigns stage_hunk<CR>", { desc = "Stage git hunk" })
+keymap.set("n", "<leader>gS", ":Gitsigns stage_buffer<CR>", { desc = "Stage git buffer" })
+keymap.set("n", "<leader>gu", ":Gitsigns undo_stage_hunk<CR>", { desc = "Undo stage hunk" })
+keymap.set("n", "<leader>gd", ":Gitsigns diffthis<CR>", { desc = "Git diff this" })
+keymap.set("n", "<leader>gD", ":Gitsigns diffthis ~<CR>", { desc = "Git diff this ~" })
+keymap.set("n", "]h", ":Gitsigns next_hunk<CR>", { desc = "Next git hunk" })
+keymap.set("n", "[h", ":Gitsigns prev_hunk<CR>", { desc = "Previous git hunk" })
+
 -- Theme switcher (using Telescope)
 keymap.set("n", "<leader>th", ":Telescope colorscheme<CR>", { desc = "Switch theme" })
 
