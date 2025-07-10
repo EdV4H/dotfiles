@@ -33,11 +33,15 @@ in
       docker
       lazygit
       claude-code
+      gemini-cli
       volta
+      amazon-q-cli
+      google-cloud-sdk
     ];
 
     sessionVariables = {
       VOLTA_HOME = "$HOME/.volta";
+      GOOGLE_CLOUD_PROJECT = "atrae-engineer-gu7335mbf";
     };
 
     sessionPath = [
