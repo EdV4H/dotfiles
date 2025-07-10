@@ -12,8 +12,16 @@ keymap.set("n", "<leader>e", ":Telescope file_browser<CR>", { desc = "File brows
 -- Telescope
 keymap.set("n", "<leader>ff", ":Telescope find_files<CR>", { desc = "Find files" })
 keymap.set("n", "<leader>fg", ":Telescope live_grep<CR>", { desc = "Live grep" })
-keymap.set("n", "<leader>fb", ":Telescope buffers<CR>", { desc = "Find buffers" })
 keymap.set("n", "<leader>fh", ":Telescope help_tags<CR>", { desc = "Help tags" })
+
+-- Buffer management
+keymap.set("n", "<leader>bb", ":Telescope buffers<CR>", { desc = "List buffers" })
+keymap.set("n", "<leader>bd", ":bdelete<CR>", { desc = "Delete buffer" })
+keymap.set("n", "<leader>bn", ":bnext<CR>", { desc = "Next buffer" })
+keymap.set("n", "<leader>bp", ":bprevious<CR>", { desc = "Previous buffer" })
+keymap.set("n", "<leader>bD", ":bufdo bd<CR>", { desc = "Delete all buffers" })
+keymap.set("n", "]b", ":bnext<CR>", { desc = "Next buffer" })
+keymap.set("n", "[b", ":bprevious<CR>", { desc = "Previous buffer" })
 
 -- Window navigation
 keymap.set("n", "<C-h>", "<C-w>h", { desc = "Navigate left" })
