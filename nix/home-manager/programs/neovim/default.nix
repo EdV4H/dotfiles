@@ -40,14 +40,11 @@ in
       config = builtins.readFile "${neovimConfigDir}/lua/plugins/which-key.lua";
     }
 
-    # UI enhancements
+    # UI enhancements - Load dependencies first
     nui-nvim
     nvim-notify
-    {
-      plugin = noice-nvim;
-      type = "lua";
-      config = builtins.readFile "${neovimConfigDir}/lua/plugins/noice.lua";
-    }
+    # Noice.nvim will be configured after dependencies are loaded
+    noice-nvim
 
     # Colorschemes
     tokyonight-nvim

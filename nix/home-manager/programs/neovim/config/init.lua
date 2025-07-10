@@ -21,6 +21,12 @@ require('config.completion')
 -- Load diagnostic configuration
 require('config.diagnostics')
 
+-- Load UI plugins
+-- Wait for nvim-notify to be available
+vim.defer_fn(function()
+  require('plugins.noice')
+end, 100)
+
 -- Load custom configurations if they exist
 local config_path = vim.fn.stdpath('config') .. '/lua/conf'
 if vim.fn.isdirectory(config_path) == 1 then
