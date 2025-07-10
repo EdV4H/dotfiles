@@ -39,10 +39,31 @@ cmp.setup({
       luasnip.lsp_expand(args.body)
     end,
   },
+  window = {
+    completion = cmp.config.window.bordered({
+      border = 'rounded',
+      winhighlight = 'Normal:Normal,FloatBorder:FloatBorder,CursorLine:PmenuSel,Search:None',
+      scrollbar = true,
+      col_offset = -3,
+      side_padding = 1,
+    }),
+    documentation = cmp.config.window.bordered({
+      border = 'rounded',
+      winhighlight = 'Normal:Normal,FloatBorder:FloatBorder,Search:None',
+      max_height = math.floor(vim.o.lines * 0.3),
+      max_width = math.floor(vim.o.columns * 0.4),
+    }),
+  },
   formatting = {
+    fields = { "kind", "abbr", "menu" },
     format = function(entry, vim_item)
       -- Kind icons
-      vim_item.kind = string.format('%s %s', kind_icons[vim_item.kind], vim_item.kind)
+      vim_item.kind = string.format('%s', kind_icons[vim_item.kind])
+      -- Truncate text if too long
+      local max_width = 50
+      if string.len(vim_item.abbr) > max_width then
+        vim_item.abbr = string.sub(vim_item.abbr, 1, max_width) .. "..."
+      end
       -- Source
       vim_item.menu = ({
         copilot = "[Copilot]",
@@ -101,5 +122,48 @@ cmp.setup({
       cmp.config.compare.length,
       cmp.config.compare.order,
     },
-  }
+  },
+  experimental = {
+    ghost_text = {
+      hl_group = 'Comment',
+    },
+  },
+  performance = {
+    debounce = 100,
+    throttle = 50,
+    fetching_timeout = 200,
+    confirm_resolve_timeout = 80,
+    async_budget = 1,
+    max_view_entries = 200,
+  },
+})
+
+-- Use buffer source for `/` and `?` (search mode)
+cmp.setup.cmdline({ '/', '?' }, {
+  mapping = cmp.mapping.preset.cmdline(),
+  sources = {
+    { name = 'buffer' }
+  },
+  window = {
+    completion = cmp.config.window.bordered({
+      border = 'rounded',
+      winhighlight = 'Normal:Normal,FloatBorder:FloatBorder,CursorLine:PmenuSel,Search:None',
+    }),
+  },
+})
+
+-- Use cmdline & path source for ':' (command mode)
+cmp.setup.cmdline(':', {
+  mapping = cmp.mapping.preset.cmdline(),
+  sources = cmp.config.sources({
+    { name = 'path' }
+  }, {
+    { name = 'cmdline' }
+  }),
+  window = {
+    completion = cmp.config.window.bordered({
+      border = 'rounded',
+      winhighlight = 'Normal:Normal,FloatBorder:FloatBorder,CursorLine:PmenuSel,Search:None',
+    }),
+  },
 })

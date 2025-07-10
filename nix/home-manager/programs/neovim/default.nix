@@ -89,6 +89,7 @@ in
     cmp-nvim-lsp
     cmp-buffer
     cmp-path
+    cmp-cmdline
     luasnip
     cmp_luasnip
 
