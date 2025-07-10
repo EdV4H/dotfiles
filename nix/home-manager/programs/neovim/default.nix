@@ -46,6 +46,9 @@ in
     # Noice.nvim will be configured after dependencies are loaded
     noice-nvim
 
+    # Navigation
+    flash-nvim
+
     # Colorschemes
     tokyonight-nvim
     gruvbox-nvim
