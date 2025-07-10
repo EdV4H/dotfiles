@@ -37,5 +37,5 @@ keymap.set("n", "<leader>lgc", ":LazyGitConfig<CR>", { desc = "LazyGit Config" }
 keymap.set("n", "<leader>lgf", ":LazyGitFilter<CR>", { desc = "LazyGit Filter" })
 keymap.set("n", "<leader>lgb", ":LazyGitFilterCurrentFile<CR>", { desc = "LazyGit Current File" })
 
--- Theme switcher
-keymap.set("n", "<leader>th", ":Themery<CR>", { desc = "Theme switcher" })
+-- Theme switcher (using Telescope)
+keymap.set("n", "<leader>th", ":Telescope colorscheme<CR>", { desc = "Switch theme" })

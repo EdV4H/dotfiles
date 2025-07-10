@@ -89,13 +89,6 @@ in
 
     # Git integration
     lazygit-nvim
-
-    # Theme switcher
-    {
-      plugin = themery-nvim;
-      type = "lua";
-      config = builtins.readFile "${neovimConfigDir}/lua/plugins/themery.lua";
-    }
   ];
 
   # Source external init.lua
