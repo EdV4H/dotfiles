@@ -7,7 +7,7 @@ keymap.set({"n", "v"}, ";", ":", { desc = "Command mode" })
 keymap.set({"n", "v"}, ":", ";", { desc = "Repeat last f/F/t/T" })
 
 -- File explorer
-keymap.set("n", "<leader>e", ":Telescope file_browser<CR>", { desc = "File browser" })
+keymap.set("n", "<leader>e", ":Telescope file_browser path=%:p:h select_buffer=true<CR>", { desc = "File browser (current dir)" })
 
 -- Telescope
 keymap.set("n", "<leader>ff", ":Telescope find_files<CR>", { desc = "Find files" })
