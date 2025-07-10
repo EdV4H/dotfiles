@@ -31,9 +31,6 @@ in
 
   # Neovim plugins managed by Nix
   plugins = with pkgs.vimPlugins; [
-    # Plugin manager (for additional plugins)
-    lazy-nvim
-
     # Essential plugins
     plenary-nvim
     nvim-web-devicons
