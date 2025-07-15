@@ -16,7 +16,7 @@ keymap.set("n", "<leader>fg", ":Telescope live_grep<CR>", { desc = "Live grep" }
 keymap.set("n", "<leader>fh", ":Telescope help_tags<CR>", { desc = "Help tags" })
 
 -- Buffer management
-keymap.set("n", "<leader>b", ":Telescope buffers<CR>", { desc = "List buffers" })
+keymap.set("n", "<leader>r", ":Telescope buffers<CR>", { desc = "List buffers" })
 keymap.set("n", "<leader>bd", ":bdelete<CR>", { desc = "Delete buffer" })
 keymap.set("n", "<leader>bn", ":bnext<CR>", { desc = "Next buffer" })
 keymap.set("n", "<leader>bp", ":bprevious<CR>", { desc = "Previous buffer" })

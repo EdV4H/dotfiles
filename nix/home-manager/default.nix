@@ -45,6 +45,7 @@ in
       bat
       fd
       direnv
+      awscli2
     ];
 
     sessionVariables = {
