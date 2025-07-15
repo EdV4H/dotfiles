@@ -22,6 +22,11 @@ in
     nixpkgs-fmt
     prettierd
     stylua
+    nodePackages.prettier
+    black
+    isort
+    ruff
+    biome
 
     # Other tools
     ripgrep
@@ -110,6 +115,12 @@ in
       type = "lua";
       config = builtins.readFile "${neovimConfigDir}/lua/plugins/gitsigns.lua";
     }
+
+    # EditorConfig support
+    editorconfig-nvim
+
+    # Auto-formatting
+    conform-nvim
 
     # AI assistant
     {
