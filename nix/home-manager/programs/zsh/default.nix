@@ -67,6 +67,15 @@
     # System
     update = "cd ~/dotfiles && nix run .#update";
     rebuild = "cd ~/dotfiles && nix run .#update";
+
+    # Package manager shortcuts (requires @antfu/ni)
+    # ni - install
+    # nr - run
+    # nx - execute
+    # nu - update
+    # nun - uninstall
+    # nci - clean install
+    # na - agent alias
   };
 
   # Session variables
@@ -176,6 +185,11 @@
     # Set default language
     export LANG="en_US.UTF-8"
     export LC_ALL="en_US.UTF-8"
+
+    # Ensure @antfu/ni is installed
+    if command -v volta &> /dev/null && ! command -v ni &> /dev/null; then
+      volta install @antfu/ni &> /dev/null
+    fi
   '';
 
   # Oh-my-zsh configuration
