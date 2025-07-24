@@ -137,7 +137,7 @@ flash.setup({
     -- options used when flash is activated through
     -- a regular search with `/` or `?`
     search = {
-      enabled = true, -- enable flash for search
+      enabled = false, -- disable flash for search to use normal vim search
       highlight = { backdrop = false },
       jump = { history = true, register = true, nohlsearch = true },
       search = {
