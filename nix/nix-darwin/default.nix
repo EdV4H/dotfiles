@@ -39,6 +39,7 @@
       "logi-options+"
       "amethyst"
       "arc"
+      "amazon-workspaces"
     ];
   };
 
