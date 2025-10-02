@@ -53,6 +53,7 @@
 
     # Claude
     ccd = "claude --dangerously-skip-permissions";
+    claude = "(){ claude }";
 
     # Neovim
     v = "nvim";
@@ -189,6 +190,11 @@
     # Ensure @antfu/ni is installed
     if command -v volta &> /dev/null && ! command -v ni &> /dev/null; then
       volta install @antfu/ni &> /dev/null
+    fi
+
+    # Ensure ccusage is installed
+    if command -v volta &> /dev/null && ! command -v ccusage &> /dev/null; then
+      volta install ccusage &> /dev/null
     fi
   '';
 
