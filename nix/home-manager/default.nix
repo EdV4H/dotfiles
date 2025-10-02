@@ -34,7 +34,7 @@ in
       tmux
       docker
       lazygit
-      claude-code
+      # claude-code # Using manual installation for latest version
       gemini-cli
       volta
       amazon-q-cli
@@ -46,6 +46,7 @@ in
       fd
       direnv
       awscli2
+      bruno
     ];
 
     sessionVariables = {
