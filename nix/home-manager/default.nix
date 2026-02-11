@@ -13,6 +13,12 @@ in
   nixpkgs = {
     overlays = [
       inputs.neovim-nightly-overlay.overlays.default
+      # Skip awscli2 tests to speed up builds
+      (final: prev: {
+        awscli2 = prev.awscli2.overrideAttrs (oldAttrs: {
+          doCheck = false;
+        });
+      })
     ];
     config = {
       allowUnfree = true;
@@ -45,8 +51,11 @@ in
       bat
       fd
       direnv
-      awscli2
+      # awscli2 # Temporarily disabled due to slow test phase
       bruno
+      mysql84
+      lazysql
+      zellij
     ];
 
     sessionVariables = {
@@ -85,5 +94,11 @@ in
   # Legacy symlink for backward compatibility
   xdg.configFile."nvim/lua/conf" = {
     source = config.lib.file.mkOutOfStoreSymlink "${pwd}/conf";
+  };
+
+  # Zellij layouts
+  xdg.configFile."zellij/layouts" = {
+    source = ./programs/zellij/layouts;
+    recursive = true;
   };
 }

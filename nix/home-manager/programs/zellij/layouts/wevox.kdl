@@ -5,18 +5,18 @@ layout {
         pane split_direction="vertical" {
             pane split_direction="horizontal" {
                 pane name="wevox (Rails)" cwd="/Users/yusukemaruyama/Projects/wevox/wevox" {
-                    command "make"
-                    args "dc_up"
+                    command "docker"
+                    args "compose" "up"
                 }
                 pane name="wevox-rest-bff" cwd="/Users/yusukemaruyama/Projects/wevox/wevox-rest-bff" {
                     command "pnpm"
-                    args "dev"
+                    args "--filter" "wevox-bff" "dev"
                 }
             }
             pane split_direction="horizontal" {
                 pane name="web-progressive" cwd="/Users/yusukemaruyama/Projects/wevox/wevox-mono-web/web-progressive" {
                     command "pnpm"
-                    args "dev"
+                    args "--filter=host" "dev"
                 }
                 pane name="wevox-front" cwd="/Users/yusukemaruyama/Projects/wevox/wevox-front" {
                     command "bash"
