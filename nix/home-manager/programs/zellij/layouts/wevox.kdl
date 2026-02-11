@@ -1,0 +1,31 @@
+layout {
+    // wevox (Rails) | wevox-mono-web/web-progressive
+    // wevox-rest-bff | wevox-front
+    tab name="wevox" focus=true {
+        pane split_direction="vertical" {
+            pane split_direction="horizontal" {
+                pane name="wevox (Rails)" cwd="/Users/yusukemaruyama/Projects/wevox/wevox" {
+                    command "make"
+                    args "dc_up"
+                }
+                pane name="wevox-rest-bff" cwd="/Users/yusukemaruyama/Projects/wevox/wevox-rest-bff" {
+                    command "pnpm"
+                    args "dev"
+                }
+            }
+            pane split_direction="horizontal" {
+                pane name="web-progressive" cwd="/Users/yusukemaruyama/Projects/wevox/wevox-mono-web/web-progressive" {
+                    command "pnpm"
+                    args "dev"
+                }
+                pane name="wevox-front" cwd="/Users/yusukemaruyama/Projects/wevox/wevox-front" {
+                    command "bash"
+                    args "-c" "docker compose up -d && docker exec -it wevox-front-dev make dev"
+                }
+            }
+        }
+    }
+    tab name="shell" {
+        pane cwd="/Users/yusukemaruyama/Projects/wevox"
+    }
+}
