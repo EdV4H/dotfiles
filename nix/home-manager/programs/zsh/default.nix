@@ -52,8 +52,7 @@
     hg = "history | grep";
 
     # Claude
-    ccd = "claude --dangerously-skip-permissions";
-    claude = "(){ claude }";
+    ccd = "command claude --dangerously-skip-permissions";
 
     # Neovim
     v = "nvim";
@@ -89,6 +88,11 @@
 
   # Init extra configuration
   initContent = ''
+    # Auto-start Zellij
+    if [[ -z "$ZELLIJ" && -z "$VSCODE_INJECTION" ]]; then
+      eval "$(zellij setup --generate-auto-start zsh)"
+    fi
+
     # Enable vi mode
     bindkey -v
     export KEYTIMEOUT=1
@@ -161,6 +165,19 @@
     # Quick backup function
     function backup() {
       cp "$1" "$1.bak"
+    }
+
+    # Claude wrapper function to disable --dangerously-skip-permissions
+    function claude() {
+      for arg in "$@"
+      do
+        if [[ "$arg" = "--dangerously-skip-permissions" ]]
+        then
+          echo "エラー: '--dangerously-skip-permissions' オプションは無効化されています。" >&2
+          return 1
+        fi
+      done
+      command claude "$@"
     }
 
     # Find and replace in current directory
