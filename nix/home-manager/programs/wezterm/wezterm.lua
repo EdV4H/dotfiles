@@ -63,6 +63,12 @@ config.keys = {
       mods = "CTRL",
     },
   },
+  -- Shift+Enterでエスケープ付き改行を送信
+  {
+    key = "Enter",
+    mods = "SHIFT",
+    action = act.SendString("\x1b\r"),
+  },
 }
 
 -- and finally, return the configuration to wezterm
