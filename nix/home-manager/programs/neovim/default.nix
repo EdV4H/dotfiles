@@ -17,6 +17,7 @@ in
     lua-language-server
     nodePackages.typescript-language-server
     nil # Nix language server
+    gopls
 
     # Formatters
     nixpkgs-fmt
