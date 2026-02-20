@@ -1,10 +1,9 @@
--- LSP configuration
+-- LSP configuration (vim.lsp.config API for Neovim 0.11+)
 
-local lspconfig = require('lspconfig')
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
 -- Lua
-lspconfig.lua_ls.setup({
+vim.lsp.config('lua_ls', {
   capabilities = capabilities,
   settings = {
     Lua = {
@@ -16,14 +15,30 @@ lspconfig.lua_ls.setup({
 })
 
 -- TypeScript/JavaScript
-lspconfig.ts_ls.setup({
+vim.lsp.config('ts_ls', {
   capabilities = capabilities,
 })
 
 -- Nix
-lspconfig.nil_ls.setup({
+vim.lsp.config('nil_ls', {
   capabilities = capabilities,
 })
+
+-- Go
+vim.lsp.config('gopls', {
+  capabilities = capabilities,
+  settings = {
+    gopls = {
+      analyses = {
+        unusedparams = true,
+      },
+      staticcheck = true,
+    },
+  },
+})
+
+-- Enable all configured servers
+vim.lsp.enable({ 'lua_ls', 'ts_ls', 'nil_ls', 'gopls' })
 
 -- LSP keybindings
 vim.api.nvim_create_autocmd('LspAttach', {
