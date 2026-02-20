@@ -40,7 +40,7 @@ in
       tmux
       docker
       lazygit
-      # claude-code # Using manual installation for latest version
+      claude-code
       gemini-cli
       volta
       amazon-q-cli
@@ -62,10 +62,13 @@ in
       VOLTA_HOME = "$HOME/.volta";
       VOLTA_FEATURE_PNPM = "1";
       GOOGLE_CLOUD_PROJECT = "atrae-engineer-gu7335mbf";
+      GOENV_ROOT = "$HOME/.goenv";
     };
 
     sessionPath = [
       "$HOME/.volta/bin"
+      "$GOENV_ROOT/bin"
+      "$HOME/go/bin"
     ];
   };
 

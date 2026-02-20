@@ -88,6 +88,9 @@
 
   # Init extra configuration
   initContent = ''
+    # goenv
+    eval "$(goenv init -)"
+
     # Auto-start Zellij
     if [[ -z "$ZELLIJ" && -z "$VSCODE_INJECTION" ]]; then
       eval "$(zellij setup --generate-auto-start zsh)"

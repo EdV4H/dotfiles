@@ -31,6 +31,9 @@
       autoUpdate = true;
       cleanup = "uninstall";
     };
+    brews = [
+      "goenv"
+    ];
     casks = [
       "docker-desktop"
       "wezterm@nightly"
