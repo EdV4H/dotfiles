@@ -84,12 +84,13 @@
     VISUAL = "nvim";
     PAGER = "less";
     LESS = "-R";
+    HAPPY_CLAUDE_PATH = "${config.home.homeDirectory}/.nix-profile/bin/claude";
   };
 
   # Init extra configuration
   initContent = ''
     # goenv
-    eval "$(goenv init -)"
+    eval "$(/opt/homebrew/bin/goenv init -)"
 
     # Auto-start Zellij
     if [[ -z "$ZELLIJ" && -z "$VSCODE_INJECTION" ]]; then
