@@ -56,6 +56,7 @@ in
       mysql84
       lazysql
       zellij
+      inputs.gws.packages.${pkgs.system}.default
     ];
 
     sessionVariables = {
@@ -97,6 +98,18 @@ in
   # Legacy symlink for backward compatibility
   xdg.configFile."nvim/lua/conf" = {
     source = config.lib.file.mkOutOfStoreSymlink "${pwd}/conf";
+  };
+
+  # Claude Code hooks
+  home.file.".claude/hooks/notify-done.sh" = {
+    source = ./programs/claude-code/notify-done.sh;
+    executable = true;
+  };
+
+  # Claude Code skills (gws - Google Workspace CLI)
+  home.file.".claude/skills" = {
+    source = ./programs/claude-code/skills;
+    recursive = true;
   };
 
   # Zellij layouts

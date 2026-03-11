@@ -20,6 +20,10 @@
       url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    gws = {
+      url = "github:googleworkspace/cli";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -30,6 +34,7 @@
       nix-darwin,
       treefmt-nix,
       nixvim,
+      gws,
       ...
     }@inputs:
     let

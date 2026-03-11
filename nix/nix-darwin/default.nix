@@ -43,6 +43,7 @@
       "amethyst"
       "arc"
       "amazon-workspaces"
+      "claude"
     ];
   };
 
