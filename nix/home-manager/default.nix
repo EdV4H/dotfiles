@@ -123,6 +123,12 @@ in
     executable = true;
   };
 
+  # Daily report generator script
+  home.file.".local/bin/daily-report" = {
+    source = ./programs/claude-code/daily-report.sh;
+    executable = true;
+  };
+
   # Claude Code skills (gws - Google Workspace CLI)
   home.file.".claude/skills" = {
     source = ./programs/claude-code/skills;

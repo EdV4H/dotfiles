@@ -73,6 +73,26 @@
     };
   };
 
+  launchd.user.agents.daily-report = {
+    serviceConfig = {
+      ProgramArguments = [
+        "/bin/sh"
+        "-c"
+        ''
+          /Users/yusukemaruyama/.local/bin/daily-report
+        ''
+      ];
+      StartCalendarInterval = [
+        {
+          Hour = 3;
+          Minute = 0;
+        }
+      ];
+      StandardOutPath = "/tmp/daily-report.out.log";
+      StandardErrorPath = "/tmp/daily-report.err.log";
+    };
+  };
+
   security.sudo.extraConfig = ''
     yusukemaruyama ALL=(ALL) NOPASSWD: /run/current-system/sw/bin/darwin-rebuild
   '';
