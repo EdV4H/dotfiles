@@ -67,6 +67,7 @@ in
     };
 
     sessionPath = [
+      "$HOME/.local/bin"
       "$HOME/.volta/bin"
       "$GOENV_ROOT/bin"
       "$HOME/go/bin"
@@ -103,6 +104,22 @@ in
   # Claude Code hooks
   home.file.".claude/hooks/notify-done.sh" = {
     source = ./programs/claude-code/notify-done.sh;
+    executable = true;
+  };
+
+  home.file.".claude/hooks/zellij-tab-thinking.sh" = {
+    source = ./programs/claude-code/zellij-tab-thinking.sh;
+    executable = true;
+  };
+
+  home.file.".claude/hooks/zellij-tab-done.sh" = {
+    source = ./programs/claude-code/zellij-tab-done.sh;
+    executable = true;
+  };
+
+  # Claude Code zellij wrapper (claude-zellij command)
+  home.file.".local/bin/claude-zellij" = {
+    source = ./programs/claude-code/claude-zellij.sh;
     executable = true;
   };
 

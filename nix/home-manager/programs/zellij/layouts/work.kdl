@@ -5,8 +5,8 @@ layout {
             plugin location="zellij:tab-bar"
         }
         pane stacked=true {
-            pane command="happy" cwd="Projects/alchemy" expanded=true {
-                args "--dangerously-skip-permissions" "-c"
+            pane command="claude-zellij" cwd="Projects/alchemy" expanded=true {
+                args "Alchemy" "--dangerously-skip-permissions" "-c"
                 start_suspended true
             }
             pane command="nr" cwd="Projects/alchemy" {
@@ -22,8 +22,8 @@ layout {
         pane size=1 borderless=true {
             plugin location="zellij:tab-bar"
         }
-        pane command="happy" cwd="Projects/learn-english-app" {
-            args "--dangerously-skip-permissions" "-c"
+        pane command="claude-zellij" cwd="Projects/learn-english-app" {
+            args "English" "--dangerously-skip-permissions" "-c"
             start_suspended true
         }
         pane size=1 borderless=true {
@@ -34,8 +34,8 @@ layout {
         pane size=1 borderless=true {
             plugin location="zellij:tab-bar"
         }
-        pane command="happy" cwd="Projects/wevox/wevox-mono-web/web-progressive" {
-            args "--dangerously-skip-permissions"
+        pane command="claude-zellij" cwd="Projects/wevox/wevox-mono-web/web-progressive" {
+            args "Widget" "--dangerously-skip-permissions"
             start_suspended true
         }
         pane size=1 borderless=true {
@@ -46,8 +46,8 @@ layout {
         pane size=1 borderless=true {
             plugin location="zellij:tab-bar"
         }
-        pane command="happy" cwd="Projects/wevox" {
-            args "--dangerously-skip-permissions"
+        pane command="claude-zellij" cwd="Projects/wevox" {
+            args "Sort" "--dangerously-skip-permissions"
             start_suspended true
         }
         pane size=1 borderless=true {
@@ -70,8 +70,8 @@ layout {
             plugin location="zellij:tab-bar"
         }
         pane stacked=true {
-            pane command="happy" cwd="Projects/croupier" expanded=true {
-                args "--dangerously-skip-permissions"
+            pane command="claude-zellij" cwd="Projects/croupier" expanded=true {
+                args "Croupier" "--dangerously-skip-permissions"
                 start_suspended true
             }
             pane command="nr" cwd="Projects/croupier" {
@@ -87,8 +87,8 @@ layout {
         pane size=1 borderless=true {
             plugin location="zellij:tab-bar"
         }
-        pane command="happy" cwd="Projects/wevox/wevox-mono-web/web-progressive" {
-            args "--dangerously-skip-permissions"
+        pane command="claude-zellij" cwd="Projects/wevox/wevox-mono-web/web-progressive" {
+            args "Analytics" "--dangerously-skip-permissions"
             start_suspended true
         }
         pane size=1 borderless=true {
@@ -99,8 +99,8 @@ layout {
         pane size=1 borderless=true {
             plugin location="zellij:tab-bar"
         }
-        pane command="happy" cwd="dotfiles" {
-            args "--dangerously-skip-permissions"
+        pane command="claude-zellij" cwd="dotfiles" {
+            args "dotfiles" "--dangerously-skip-permissions"
             start_suspended true
         }
         pane size=1 borderless=true {
@@ -112,8 +112,8 @@ layout {
             plugin location="zellij:tab-bar"
         }
         pane stacked=true {
-            pane command="happy" cwd="Projects/atrae-ui" expanded=true {
-                args "--dangerously-skip-permissions"
+            pane command="claude-zellij" cwd="Projects/atrae-ui" expanded=true {
+                args "DesignSystem" "--dangerously-skip-permissions"
                 start_suspended true
             }
             pane cwd="Projects/atrae-ui"
@@ -126,8 +126,8 @@ layout {
         pane size=1 borderless=true {
             plugin location="zellij:tab-bar"
         }
-        pane command="happy" cwd="Projects/sandbox/wevox-logo-generator-handson" {
-            args "--dangerously-skip-permissions"
+        pane command="claude-zellij" cwd="Projects/sandbox/wevox-logo-generator-handson" {
+            args "Logo" "--dangerously-skip-permissions"
             start_suspended true
         }
         pane size=1 borderless=true {
