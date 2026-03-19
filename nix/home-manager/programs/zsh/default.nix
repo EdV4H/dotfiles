@@ -53,6 +53,7 @@
 
     # Claude
     ccd = "command claude --dangerously-skip-permissions";
+    ccdr = "command claude --dangerously-skip-permissions --remote-control";
 
     # Neovim
     v = "nvim";
@@ -89,8 +90,11 @@
 
   # Init extra configuration
   initContent = ''
-    # goenv
-    eval "$(/opt/homebrew/bin/goenv init -)"
+    # goenv (ensure Homebrew PATH is available before init)
+    if [[ -x /opt/homebrew/bin/goenv ]]; then
+      export PATH="/opt/homebrew/bin:$PATH"
+      eval "$(/opt/homebrew/bin/goenv init -)"
+    fi
 
     # Auto-start Zellij
     if [[ -z "$ZELLIJ" && -z "$VSCODE_INJECTION" ]]; then
