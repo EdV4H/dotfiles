@@ -7,39 +7,55 @@ layout {
         pane split_direction="horizontal" {
             pane split_direction="vertical" {
                 pane stacked=true {
-                    pane cwd="Projects/wevox" expanded=true
+                    pane command="ccdr" cwd="Projects/wevox" expanded=true {
+                        start_suspended true
+                    }
                     pane cwd="Projects/wevox"
                 }
                 pane stacked=true {
-                    pane cwd="Projects/wevox/wevox-mono-web/web-progressive" expanded=true
+                    pane command="ccdr" cwd="Projects/wevox/wevox-mono-web/web-progressive" expanded=true {
+                        start_suspended true
+                    }
                     pane cwd="Projects/wevox/wevox-mono-web/web-progressive"
                     pane cwd="Projects/wevox/wevox"
                 }
                 pane stacked=true {
-                    pane cwd="Projects/wevox/wevox-rest-bff" expanded=true
+                    pane command="ccdr" cwd="Projects/wevox/wevox-rest-bff" expanded=true {
+                        start_suspended true
+                    }
                     pane cwd="Projects/wevox/wevox-rest-bff"
                 }
                 pane stacked=true {
-                    pane cwd="Projects/wevox/wevox-front" expanded=true
+                    pane command="ccdr" cwd="Projects/wevox/wevox-front" expanded=true {
+                        start_suspended true
+                    }
                     pane cwd="Projects/wevox/wevox-front"
                     pane cwd="Projects/manifest"
                 }
             }
             pane split_direction="vertical" {
                 pane stacked=true {
-                    pane cwd="Projects" expanded=true
+                    pane command="ccdr" cwd="Projects" expanded=true {
+                        start_suspended true
+                    }
                     pane cwd="Projects"
                 }
                 pane stacked=true {
-                    pane cwd="Projects" expanded=true
+                    pane command="ccdr" cwd="Projects" expanded=true {
+                        start_suspended true
+                    }
                     pane cwd="Projects"
                 }
                 pane stacked=true {
-                    pane cwd="Projects" expanded=true
+                    pane command="ccdr" cwd="Projects" expanded=true {
+                        start_suspended true
+                    }
                     pane cwd="Projects"
                 }
                 pane stacked=true {
-                    pane cwd="dotfiles" expanded=true
+                    pane command="ccdr" cwd="dotfiles" expanded=true {
+                        start_suspended true
+                    }
                     pane cwd="dotfiles"
                 }
             }
