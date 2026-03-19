@@ -51,6 +51,7 @@ in
       bat
       fd
       direnv
+      uv
       # awscli2 # Temporarily disabled due to slow test phase
       bruno
       mysql84
