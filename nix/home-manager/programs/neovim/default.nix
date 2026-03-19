@@ -138,7 +138,7 @@ in
   ];
 
   # Source external init.lua
-  extraLuaConfig = builtins.readFile "${neovimConfigDir}/init.lua";
+  initLua = builtins.readFile "${neovimConfigDir}/init.lua";
 
   # Additional configuration files
   extraLuaPackages = ps: [ ];
