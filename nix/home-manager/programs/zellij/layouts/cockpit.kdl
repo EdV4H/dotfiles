@@ -8,14 +8,14 @@ layout {
             pane split_direction="vertical" {
                 pane stacked=true {
                     pane command="claude" cwd="Projects/wevox" expanded=true {
-                        args "--dangerously-skip-permissions" "--remote-control"
+                        args "--dangerously-skip-permissions" "--remote-control" "-c"
                         start_suspended true
                     }
                     pane cwd="Projects/wevox"
                 }
                 pane stacked=true {
                     pane command="claude" cwd="Projects/wevox/wevox-mono-web/web-progressive" expanded=true {
-                        args "--dangerously-skip-permissions" "--remote-control"
+                        args "--dangerously-skip-permissions" "--remote-control" "-c"
                         start_suspended true
                     }
                     pane cwd="Projects/wevox/wevox-mono-web/web-progressive"
@@ -23,14 +23,14 @@ layout {
                 }
                 pane stacked=true {
                     pane command="claude" cwd="Projects/wevox/wevox-rest-bff" expanded=true {
-                        args "--dangerously-skip-permissions" "--remote-control"
+                        args "--dangerously-skip-permissions" "--remote-control" "-c"
                         start_suspended true
                     }
                     pane cwd="Projects/wevox/wevox-rest-bff"
                 }
                 pane stacked=true {
                     pane command="claude" cwd="Projects/wevox/wevox-front" expanded=true {
-                        args "--dangerously-skip-permissions" "--remote-control"
+                        args "--dangerously-skip-permissions" "--remote-control" "-c"
                         start_suspended true
                     }
                     pane cwd="Projects/wevox/wevox-front"
@@ -39,29 +39,20 @@ layout {
             }
             pane split_direction="vertical" {
                 pane stacked=true {
-                    pane command="claude" cwd="Projects" expanded=true {
-                        args "--dangerously-skip-permissions" "--remote-control"
-                        start_suspended true
-                    }
+                    pane cwd="Projects" expanded=true
                     pane cwd="Projects"
                 }
                 pane stacked=true {
-                    pane command="claude" cwd="Projects" expanded=true {
-                        args "--dangerously-skip-permissions" "--remote-control"
-                        start_suspended true
-                    }
+                    pane cwd="Projects" expanded=true
                     pane cwd="Projects"
                 }
                 pane stacked=true {
-                    pane command="claude" cwd="Projects" expanded=true {
-                        args "--dangerously-skip-permissions" "--remote-control"
-                        start_suspended true
-                    }
+                    pane cwd="Projects" expanded=true
                     pane cwd="Projects"
                 }
                 pane stacked=true {
                     pane command="claude" cwd="dotfiles" expanded=true {
-                        args "--dangerously-skip-permissions" "--remote-control"
+                        args "--dangerously-skip-permissions" "--remote-control" "-c"
                         start_suspended true
                     }
                     pane cwd="dotfiles"
