@@ -1,0 +1,60 @@
+layout {
+    cwd "/Users/yusukemaruyama"
+    tab name="Cockpit" hide_floating_panes=true {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        pane split_direction="horizontal" {
+            pane split_direction="vertical" {
+                pane stacked=true {
+                    pane cwd="Projects/wevox" expanded=true
+                    pane cwd="Projects/wevox"
+                }
+                pane stacked=true {
+                    pane cwd="Projects/wevox/wevox-mono-web/web-progressive" expanded=true
+                    pane cwd="Projects/wevox/wevox-mono-web/web-progressive"
+                    pane cwd="Projects/wevox/wevox"
+                }
+                pane stacked=true {
+                    pane cwd="Projects/wevox/wevox-rest-bff" expanded=true
+                    pane cwd="Projects/wevox/wevox-rest-bff"
+                }
+                pane stacked=true {
+                    pane cwd="Projects/wevox/wevox-front" expanded=true
+                    pane cwd="Projects/wevox/wevox-front"
+                    pane cwd="Projects/manifest"
+                }
+            }
+            pane split_direction="vertical" {
+                pane stacked=true {
+                    pane cwd="Projects" expanded=true
+                    pane cwd="Projects"
+                }
+                pane stacked=true {
+                    pane cwd="Projects" expanded=true
+                    pane cwd="Projects"
+                }
+                pane stacked=true {
+                    pane cwd="Projects" expanded=true
+                    pane cwd="Projects"
+                }
+                pane stacked=true {
+                    pane cwd="dotfiles" expanded=true
+                    pane cwd="dotfiles"
+                }
+            }
+        }
+        pane size=1 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+    new_tab_template {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        pane
+        pane size=1 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+}
