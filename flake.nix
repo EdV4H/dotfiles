@@ -24,6 +24,10 @@
       url = "github:googleworkspace/cli";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    gh-review-watcher = {
+      url = "github:EdV4H/gh-review-watcher";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -35,6 +39,7 @@
       treefmt-nix,
       nixvim,
       gws,
+      gh-review-watcher,
       ...
     }@inputs:
     let
