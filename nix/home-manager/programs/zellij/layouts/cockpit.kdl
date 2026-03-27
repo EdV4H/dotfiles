@@ -39,7 +39,7 @@ layout {
             }
             pane split_direction="vertical" {
                 pane stacked=true {
-                    pane cwd="Projects" expanded=true
+                    pane command="gh-review-watcher" expanded=true
                     pane cwd="Projects"
                 }
                 pane stacked=true {
