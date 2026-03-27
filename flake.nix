@@ -28,6 +28,10 @@
       url = "github:EdV4H/gh-review-watcher";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    port-patrol = {
+      url = "github:EdV4H/port-patrol";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -40,6 +44,7 @@
       nixvim,
       gws,
       gh-review-watcher,
+      port-patrol,
       ...
     }@inputs:
     let

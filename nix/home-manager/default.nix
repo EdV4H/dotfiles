@@ -59,6 +59,7 @@ in
       zellij
       inputs.gws.packages.${pkgs.system}.default
       inputs.gh-review-watcher.packages.${pkgs.system}.default
+      inputs.port-patrol.packages.${pkgs.system}.default
     ];
 
     sessionVariables = {
