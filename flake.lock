@@ -104,11 +104,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1774593886,
-        "narHash": "sha256-J8bzbR8ZTKfT13H2261Mx71GRAwQi1TzH906U7C4KOI=",
+        "lastModified": 1774595815,
+        "narHash": "sha256-r3wvnpr+Bwd9lWmcfxPxw+hl8z5852u8x66khTlkRZA=",
         "owner": "EdV4H",
         "repo": "gh-review-watcher",
-        "rev": "6621053bd2892bb8d7d4dd708abff5eec82ee51b",
+        "rev": "143f7fc6de307a4e534252da62aced2d89605550",
         "type": "github"
       },
       "original": {
