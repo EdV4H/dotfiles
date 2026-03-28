@@ -70,6 +70,8 @@ EOF
 
 **approve しない場合:**
 
+1. コメントで理由を説明:
+
 ```bash
 gh pr review <number> -R <repo> --comment --body "$(cat <<'EOF'
 ## Auto-review: 手動レビューが必要です
@@ -84,6 +86,12 @@ yolo ラベルが付いていますが、以下の理由で自動 approve でき
 🤖 Reviewed by Claude Code (yolo-review)
 EOF
 )"
+```
+
+2. `yolo` ラベルを削除して再度の自動レビューを防止:
+
+```bash
+gh pr edit <number> -R <repo> --remove-label "yolo"
 ```
 
 ### Step 5: 結果を出力
