@@ -118,6 +118,15 @@ Note: The configuration uses experimental Nix features (flakes) which must be en
 - Import it in `nix/home-manager/default.nix`
 - See wezterm configuration as an example
 
+## Compact Instructions
+
+When compacting, preserve the following:
+- Current task context and goals
+- File paths being edited and their purpose
+- Test results and error messages
+- Decisions already made and their rationale
+- Key variable names and function signatures being worked on
+
 ## Important Notes
 
 - The Neovim configuration references a symlink to `${pwd}/conf` which points to `~/dotfiles-nix/home-manager/console/neovim/conf` - this path may need adjustment
