@@ -67,6 +67,7 @@ in
       VOLTA_FEATURE_PNPM = "1";
       GOOGLE_CLOUD_PROJECT = "atrae-engineer-gu7335mbf";
       GOENV_ROOT = "$HOME/.goenv";
+      CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = "65";
     };
 
     sessionPath = [
@@ -129,6 +130,12 @@ in
   # Daily report generator script
   home.file.".local/bin/daily-report" = {
     source = ./programs/claude-code/daily-report.sh;
+    executable = true;
+  };
+
+  # PR review script (triggered by gh-review-watcher)
+  home.file.".local/bin/review-pr" = {
+    source = ./programs/claude-code/review-pr.sh;
     executable = true;
   };
 

@@ -153,6 +153,11 @@ zellij action rename-pane "$NEW_BRANCH"
 - 最新コミット: <hash> <message>
 ```
 
+### Step 11: コンテキスト削減
+
+タスク完了後、`/compact` を実行してコンテキストを圧縮する。
+worktree-cleanupは作業の区切りなので、前のworktreeでの作業履歴を積極的に削減する。
+
 ## 注意事項
 
 - **`git worktree remove` は取り消せない** — 未コミットの変更がある場合は必ずユーザーに確認
