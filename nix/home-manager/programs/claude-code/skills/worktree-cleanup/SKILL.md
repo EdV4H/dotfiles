@@ -153,10 +153,11 @@ zellij action rename-pane "$NEW_BRANCH"
 - 最新コミット: <hash> <message>
 ```
 
-### Step 11: コンテキスト削減
+### Step 11: コンテキスト削減の提案
 
-タスク完了後、`/compact` を実行してコンテキストを圧縮する。
-worktree-cleanupは作業の区切りなので、前のworktreeでの作業履歴を積極的に削減する。
+ユーザーに `/compact` の実行を提案する。worktree-cleanupは作業の区切りなので、前のworktreeでの作業履歴を圧縮する良いタイミング。
+
+例: 「worktreeのクリーンアップが完了しました。作業の区切りなので、`/compact` でコンテキストを圧縮することをお勧めします。」
 
 ## 注意事項
 
