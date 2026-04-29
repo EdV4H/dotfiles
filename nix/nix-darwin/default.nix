@@ -41,7 +41,8 @@
       "figma"
       "logi-options+"
       "amethyst"
-      "arc"
+      "thebrowsercompany-dia"
+      "nani"
       "amazon-workspaces"
       "claude"
     ];
