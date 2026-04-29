@@ -19,6 +19,12 @@ in
           doCheck = false;
         });
       })
+      # Skip direnv tests — they hang on macOS
+      (final: prev: {
+        direnv = prev.direnv.overrideAttrs (oldAttrs: {
+          doCheck = false;
+        });
+      })
     ];
     config = {
       allowUnfree = true;
