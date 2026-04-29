@@ -15,7 +15,7 @@ in
   extraPackages = with pkgs; [
     # Language servers
     lua-language-server
-    nodePackages.typescript-language-server
+    typescript-language-server
     nil # Nix language server
     gopls
 
@@ -23,7 +23,7 @@ in
     nixpkgs-fmt
     prettierd
     stylua
-    nodePackages.prettier
+    prettier
     black
     isort
     ruff
