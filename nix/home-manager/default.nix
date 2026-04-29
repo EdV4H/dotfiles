@@ -139,6 +139,12 @@ in
     executable = true;
   };
 
+  # Close merged/closed PR review tabs (triggered by gh-review-watcher on_poll)
+  home.file.".local/bin/close-merged-review-tab" = {
+    source = ./programs/claude-code/close-merged-review-tab.sh;
+    executable = true;
+  };
+
   # Claude Code skills (gws - Google Workspace CLI)
   home.file.".claude/skills" = {
     source = ./programs/claude-code/skills;
