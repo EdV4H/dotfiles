@@ -139,6 +139,18 @@ in
     executable = true;
   };
 
+  # PR conflict daily auto-checker (entrypoint, called by launchd)
+  home.file.".local/bin/pr-conflict-check" = {
+    source = ./programs/claude-code/pr-conflict-check.sh;
+    executable = true;
+  };
+
+  # Single-PR conflict resolver (called by pr-conflict-check)
+  home.file.".local/bin/pr-conflict-resolve" = {
+    source = ./programs/claude-code/pr-conflict-resolve.sh;
+    executable = true;
+  };
+
   # PR review script (triggered by gh-review-watcher)
   home.file.".local/bin/review-pr" = {
     source = ./programs/claude-code/review-pr.sh;

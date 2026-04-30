@@ -94,6 +94,26 @@
     };
   };
 
+  launchd.user.agents.pr-conflict-check = {
+    serviceConfig = {
+      ProgramArguments = [
+        "/bin/sh"
+        "-c"
+        ''
+          /Users/yusukemaruyama/.local/bin/pr-conflict-check
+        ''
+      ];
+      StartCalendarInterval = [
+        {
+          Hour = 8;
+          Minute = 30;
+        }
+      ];
+      StandardOutPath = "/tmp/pr-conflict-check.out.log";
+      StandardErrorPath = "/tmp/pr-conflict-check.err.log";
+    };
+  };
+
   security.sudo.extraConfig = ''
     yusukemaruyama ALL=(ALL) NOPASSWD: /run/current-system/sw/bin/darwin-rebuild
   '';
