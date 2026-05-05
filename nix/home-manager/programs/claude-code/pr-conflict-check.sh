@@ -14,6 +14,17 @@ log() {
 
 log "=== Starting pr-conflict-check (dry_run=$DRY_RUN, target=${TARGET_PR:-<all>}) ==="
 
+# 古い shallow clone を掃除 (14日以上アクセスのないもの)
+# /tmp/pr-conflict-check/<owner>-<repo>/ が対象。prompts/ は除外
+SHALLOW_ROOT="/tmp/pr-conflict-check"
+if [ -d "$SHALLOW_ROOT" ]; then
+  while IFS= read -r dir; do
+    [ -z "$dir" ] && continue
+    log "removing stale shallow clone: $dir"
+    rm -rf "$dir"
+  done < <(find "$SHALLOW_ROOT" -mindepth 1 -maxdepth 1 -type d -not -name prompts -atime +14 2>/dev/null)
+fi
+
 # 自分のopen PR (非draft) を取得
 PRS_JSON=$(gh search prs --author=@me --state=open --draft=false \
   --json url,repository,number,title \
