@@ -96,12 +96,39 @@ shallow_clone() {
   echo "$target"
 }
 
+# アクティブな zellij セッション名を取得
+# 優先順: (current) のセッション → 最も最近作成されたセッション
+zellij_session() {
+  local sessions
+  sessions=$(zellij list-sessions --no-formatting 2>/dev/null | grep -v EXITED || true)
+  if [ -z "$sessions" ]; then
+    return 1
+  fi
+  # (current) があればそれを優先
+  local current_session
+  current_session=$(echo "$sessions" | grep '(current)' | awk '{print $1}' | head -1)
+  if [ -n "$current_session" ]; then
+    echo "$current_session"
+    return 0
+  fi
+  # なければ list の最初 (zellij は新しい順で出すとは限らないが、launchd 起動時は1つしかないことが多い)
+  echo "$sessions" | head -1 | awk '{print $1}'
+}
+
 # zellij タブを開いて Claude セッションを起動 (人間委譲用)
 # usage: open_human_tab <work_dir> <handoff_reason>
 open_human_tab() {
   local work_dir="$1"
   local handoff_reason="$2"
   local TAB="Conflict: $REPO#$NUM"
+
+  local session
+  if ! session=$(zellij_session); then
+    log "  ERROR: no active zellij session, cannot open tab"
+    log "  human handoff details: work_dir=$work_dir reason=$handoff_reason"
+    return
+  fi
+  log "  using zellij session: $session"
 
   local handoff_prompt
   handoff_prompt=$(cat <<EOF
@@ -117,73 +144,81 @@ URL: $URL
 $handoff_reason
 
 現在の状態:
-- $work_dir に checkout 済み
+- $work_dir に checkout 済み (worktree)
 - rebase は abort 済み
 
 あなた (Claude Code) のサポート方針:
 1. コンフリクトの全体像を1分で要約 (どのファイル / 双方の変更の意図 / 推奨方針)
 2. ユーザーが OK したら \`git rebase origin/$BASE\` をやり直して conflict 解決
 3. 解決後 \`git rebase --continue\` → \`git push --force-with-lease\` まで実行
-4. 完了したらこの zellij タブを \`zellij action close-tab\` で閉じてOK
+4. 完了したらメインリポジトリで \`git worktree remove $work_dir\` を実行して掃除
+5. zellij タブを \`zellij action close-tab\` で閉じてOK
 EOF
 )
 
   # 既存タブがあれば focus のみ
   local existing
-  existing=$(zellij action query-tab-names 2>/dev/null | grep -Fx "$TAB" || true)
+  existing=$(zellij --session "$session" action query-tab-names 2>/dev/null | grep -Fx "$TAB" || true)
   if [ -n "$existing" ]; then
     log "  zellij tab '$TAB' already exists, focusing"
-    zellij action go-to-tab-name "$TAB" 2>>"$LOG_FILE" || true
+    zellij --session "$session" action go-to-tab-name "$TAB" 2>>"$LOG_FILE" || true
     return
   fi
 
   # 新規タブ作成して claude 起動
   log "  opening new zellij tab: $TAB"
-  zellij action new-tab --name "$TAB" --layout default 2>>"$LOG_FILE" || true
-  zellij action write-chars "cd $(printf '%q' "$work_dir") && claude --dangerously-skip-permissions $(printf '%q' "$handoff_prompt")" 2>>"$LOG_FILE" || true
+  zellij --session "$session" action new-tab --name "$TAB" --layout default 2>>"$LOG_FILE" || true
+  zellij --session "$session" action write-chars "cd $(printf '%q' "$work_dir") && claude --dangerously-skip-permissions $(printf '%q' "$handoff_prompt")" 2>>"$LOG_FILE" || true
   # Enter (0x0d)
-  zellij action write 13 2>>"$LOG_FILE" || true
+  zellij --session "$session" action write 13 2>>"$LOG_FILE" || true
 }
 
 # ---- ローカル準備 ----
+# main repo を見つけて、そこから worktree を作って作業する
+# (main repo が dirty でも干渉しない / 複数PRを並行処理しても衝突しない)
 
-WORK=""
-if WORK=$(find_local_clone "$REPO"); then
-  log "found local clone: $WORK"
+MAIN_REPO=""
+if MAIN_REPO=$(find_local_clone "$REPO"); then
+  log "found local clone: $MAIN_REPO"
 else
-  WORK=$(shallow_clone "$REPO")
-  log "using shallow clone: $WORK"
+  MAIN_REPO=$(shallow_clone "$REPO")
+  log "using shallow clone: $MAIN_REPO"
+fi
+
+# worktree のパス: <main_repo>/.claude/worktrees/pr-conflict/<branch_safe>
+BRANCH_SAFE="${BRANCH//\//-}"
+WORK="$MAIN_REPO/.claude/worktrees/pr-conflict/$BRANCH_SAFE"
+
+# 既存 worktree があれば一旦削除 (前回の中途半端な状態をクリア)
+if [ -d "$WORK" ]; then
+  log "removing stale worktree: $WORK"
+  git -C "$MAIN_REPO" worktree remove --force "$WORK" >> "$LOG_FILE" 2>&1 || true
+  rm -rf "$WORK" 2>/dev/null || true
+fi
+
+# fetch は main repo で行う (worktree は object を共有)
+git -C "$MAIN_REPO" fetch origin --quiet || {
+  log "ERROR: fetch failed in $MAIN_REPO"
+  echo "ERROR_FETCH_FAILED"
+  exit 0
+}
+
+# worktree を作る (origin/<branch> から)
+log "creating worktree: $WORK -> $BRANCH"
+mkdir -p "$(dirname "$WORK")"
+if ! git -C "$MAIN_REPO" worktree add -B "$BRANCH" "$WORK" "origin/$BRANCH" >> "$LOG_FILE" 2>&1; then
+  log "ERROR: worktree add failed"
+  echo "ERROR_WORKTREE_FAILED"
+  exit 0
 fi
 
 cd "$WORK"
 
-# 作業前の状態を保存
-ORIG_REF=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse HEAD)
-log "original ref: $ORIG_REF"
-
-# 未コミットの変更があれば中断 (人間の作業中の可能性)
-if [ -n "$(git status --porcelain)" ]; then
-  log "ERROR: working tree dirty, skipping"
-  echo "ERROR_DIRTY_WORKTREE"
-  exit 0
-fi
-
 cleanup() {
-  cd "$WORK" 2>/dev/null || return
-  git rebase --abort 2>/dev/null || true
-  git checkout "$ORIG_REF" 2>/dev/null || true
+  cd "$MAIN_REPO" 2>/dev/null || return
+  git worktree remove --force "$WORK" >> "$LOG_FILE" 2>&1 || true
+  rm -rf "$WORK" 2>/dev/null || true
 }
-
-git fetch origin --quiet
-git checkout "$BRANCH" 2>>"$LOG_FILE" || {
-  git checkout -B "$BRANCH" "origin/$BRANCH" 2>>"$LOG_FILE" || {
-    log "ERROR: cannot checkout $BRANCH"
-    cleanup
-    echo "ERROR_CHECKOUT_FAILED"
-    exit 0
-  }
-}
-git reset --hard "origin/$BRANCH" 2>>"$LOG_FILE" || true
 
 # ---- 1. API経由 rebase 試行 ----
 log "trying gh pr update-branch --rebase"
@@ -313,7 +348,6 @@ done <<< "$CONFLICTS"
 if [ "$risk_match" = "true" ]; then
   log "  → risk file detected, handing off to human"
   git rebase --abort 2>/dev/null || true
-  git checkout "$ORIG_REF" 2>/dev/null || true
   open_human_tab "$WORK" "RISK_FILES detected: $(echo "$CONFLICTS" | tr '\n' ' ')"
   echo "HUMAN_NEEDED"
   exit 0
@@ -418,7 +452,6 @@ fi
 # ---- 3d. 人間委譲 ----
 log "  → handing off to human (zellij tab)"
 git rebase --abort 2>/dev/null || true
-git checkout "$ORIG_REF" 2>/dev/null || true
 
 open_human_tab "$WORK" "判定: can_auto=$CAN confidence=$CONF reason=$REASON"
 echo "HUMAN_NEEDED"
