@@ -132,3 +132,21 @@ When compacting, preserve the following:
 - The Neovim configuration references a symlink to `${pwd}/conf` which points to `~/dotfiles-nix/home-manager/console/neovim/conf` - this path may need adjustment
 - WezTerm is installed via Homebrew's nightly cask, not Nix
 - The configuration includes both Nix packages and Homebrew casks for different types of applications
+
+### Zellij タブ閉じる時の注意
+
+**重要**: zellij タブを閉じる時は必ず `close-tab-by-id` を使うこと。`go-to-tab-name` + `close-tab` の組み合わせは事故の元。
+
+理由: `go-to-tab-name "<name>"` は対象タブが存在しないと**フォーカスを移動せず黙って失敗** (exit code 2)。続けて `close-tab` を実行すると**現在フォーカスのタブが閉じてしまう**。 `2>/dev/null` でエラーを潰していると気付かず、別のタブを破壊する事故が起きる。
+
+```bash
+# ❌ 危険: tab name が存在しないと、フォーカスのある別のタブを閉じてしまう
+zellij action go-to-tab-name "$TAB_NAME" 2>/dev/null
+zellij action close-tab
+
+# ✅ 安全: ID で明示的に指定 (なければ noop)
+TAB_ID=$(zellij action list-tabs --json | jq -r --arg n "$TAB_NAME" '.[] | select(.name == $n) | .tab_id')
+[ -n "$TAB_ID" ] && zellij action close-tab-by-id "$TAB_ID"
+```
+
+参考実装: `nix/home-manager/programs/claude-code/close-merged-review-tab.sh`
