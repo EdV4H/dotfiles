@@ -176,7 +176,8 @@ EOF
   # 新規タブ作成して claude 起動
   log "  opening new zellij tab: $TAB"
   zellij --session "$session" action new-tab --name "$TAB" --layout default 2>>"$LOG_FILE" || true
-  zellij --session "$session" action write-chars "cd $(printf '%q' "$work_dir") && claude \"\$(cat $(printf '%q' "$prompt_file"))\"" 2>>"$LOG_FILE" || true
+  # ccd = `command claude --dangerously-skip-permissions` (zsh alias, wrapper を bypass)
+  zellij --session "$session" action write-chars "cd $(printf '%q' "$work_dir") && ccd \"\$(cat $(printf '%q' "$prompt_file"))\"" 2>>"$LOG_FILE" || true
   # Enter (0x0d)
   zellij --session "$session" action write 13 2>>"$LOG_FILE" || true
 }
@@ -396,7 +397,7 @@ JSON のみ出力してください (コードフェンスなし、余計なテ�
 EOF
 )
 
-JUDGE_RAW=$(claude -p "$JUDGE_PROMPT" 2>>"$LOG_FILE" || echo "")
+JUDGE_RAW=$(claude --dangerously-skip-permissions -p "$JUDGE_PROMPT" 2>>"$LOG_FILE" || echo "")
 JUDGE=$(echo "$JUDGE_RAW" | sed -n '/^{/,/^}/p')
 log "  judge: $JUDGE"
 
@@ -431,7 +432,7 @@ EOF
 )
 
   cd "$WORK"
-  AUTO_OUT=$(claude -p "$RESOLVE_PROMPT" 2>>"$LOG_FILE" || echo "")
+  AUTO_OUT=$(claude --dangerously-skip-permissions -p "$RESOLVE_PROMPT" 2>>"$LOG_FILE" || echo "")
   log "  auto-resolve output: $(echo "$AUTO_OUT" | tail -20)"
 
   if echo "$AUTO_OUT" | grep -q "^GIVE_UP"; then
