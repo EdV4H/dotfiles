@@ -165,10 +165,18 @@ EOF
     return
   fi
 
+  # prompt は長くなりがちなので一時ファイルに書き出して、zellij には短いコマンドだけ送る
+  # (write-chars に長文を流すと途中で切れる/欠落することがある)
+  local prompt_dir="/tmp/pr-conflict-check/prompts"
+  mkdir -p "$prompt_dir"
+  local prompt_file="$prompt_dir/${REPO//\//-}-${NUM}.prompt"
+  printf '%s\n' "$handoff_prompt" > "$prompt_file"
+  log "  prompt written to: $prompt_file"
+
   # 新規タブ作成して claude 起動
   log "  opening new zellij tab: $TAB"
   zellij --session "$session" action new-tab --name "$TAB" --layout default 2>>"$LOG_FILE" || true
-  zellij --session "$session" action write-chars "cd $(printf '%q' "$work_dir") && claude --dangerously-skip-permissions $(printf '%q' "$handoff_prompt")" 2>>"$LOG_FILE" || true
+  zellij --session "$session" action write-chars "cd $(printf '%q' "$work_dir") && claude --dangerously-skip-permissions \"\$(cat $(printf '%q' "$prompt_file"))\"" 2>>"$LOG_FILE" || true
   # Enter (0x0d)
   zellij --session "$session" action write 13 2>>"$LOG_FILE" || true
 }
