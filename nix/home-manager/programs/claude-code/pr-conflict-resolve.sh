@@ -91,7 +91,8 @@ shallow_clone() {
   mkdir -p "$clone_root"
   if [ ! -d "$target/.git" ]; then
     log "shallow cloning $repo to $target"
-    gh repo clone "$repo" "$target" -- --depth 50 >> "$LOG_FILE" 2>&1
+    # --no-single-branch で全ブランチを取る (PR ブランチも含むため)
+    gh repo clone "$repo" "$target" -- --depth 50 --no-single-branch >> "$LOG_FILE" 2>&1
   fi
   echo "$target"
 }
@@ -206,10 +207,14 @@ if [ -d "$WORK" ]; then
 fi
 
 # fetch は main repo で行う (worktree は object を共有)
-git -C "$MAIN_REPO" fetch origin --quiet || {
-  log "ERROR: fetch failed in $MAIN_REPO"
-  echo "ERROR_FETCH_FAILED"
-  exit 0
+# PR branch と base branch を明示的に fetch (shallow clone で single-branch だった場合の保険)
+git -C "$MAIN_REPO" fetch origin "$BRANCH":"refs/remotes/origin/$BRANCH" "$BASE":"refs/remotes/origin/$BASE" --quiet 2>>"$LOG_FILE" || {
+  # fallback: 全fetchを試す (古い設定のリモートがある場合)
+  git -C "$MAIN_REPO" fetch origin --quiet 2>>"$LOG_FILE" || {
+    log "ERROR: fetch failed in $MAIN_REPO"
+    echo "ERROR_FETCH_FAILED"
+    exit 0
+  }
 }
 
 # worktree を作る (origin/<branch> から)
