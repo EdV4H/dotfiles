@@ -135,13 +135,16 @@ When compacting, preserve the following:
 
 ### Zellij タブ閉じる時の注意
 
-**重要**: zellij タブを閉じる時は必ず `close-tab-by-id` を使うこと。`go-to-tab-name` + `close-tab` の組み合わせは事故の元。
+**重要**: zellij タブを閉じる時は **絶対に `zellij action close-tab` を呼ばない**。`close-tab` は「今フォーカスのあるタブ」を閉じるコマンドであり、ユーザーが見ているタブを巻き込んで破壊する事故が頻発している。必ず `close-tab-by-id` を ID 指定で使うこと。
 
-理由: `go-to-tab-name "<name>"` は対象タブが存在しないと**フォーカスを移動せず黙って失敗** (exit code 2)。続けて `close-tab` を実行すると**現在フォーカスのタブが閉じてしまう**。 `2>/dev/null` でエラーを潰していると気付かず、別のタブを破壊する事故が起きる。
+事故パターン: `go-to-tab-name "<name>"` は対象タブが存在しないと**フォーカスを移動せず黙って失敗** (exit code 2)。続けて `close-tab` を実行すると**現在フォーカスのタブが閉じてしまう**。 `2>/dev/null` でエラーを潰していると気付かず、別のタブを破壊する。
 
 ```bash
-# ❌ 危険: tab name が存在しないと、フォーカスのある別のタブを閉じてしまう
+# ❌ 絶対 NG: tab name が存在しないと、フォーカスのある別のタブを閉じてしまう
 zellij action go-to-tab-name "$TAB_NAME" 2>/dev/null
+zellij action close-tab
+
+# ❌ 絶対 NG: フォーカスのあるタブをそのまま閉じる (今いるタブが消える)
 zellij action close-tab
 
 # ✅ 安全: ID で明示的に指定 (なければ noop)
@@ -149,4 +152,9 @@ TAB_ID=$(zellij action list-tabs --json | jq -r --arg n "$TAB_NAME" '.[] | selec
 [ -n "$TAB_ID" ] && zellij action close-tab-by-id "$TAB_ID"
 ```
 
-参考実装: `nix/home-manager/programs/claude-code/close-merged-review-tab.sh`
+専用ヘルパー (使えるなら必ずこっちを優先):
+
+- `close-conflict-tab <repo> <num>` → `Conflict: <repo>#<num>` タブを閉じる (pr-conflict-check 用)
+- `close-merged-review-tab <num> <repo>` → `Review: <repo>#<num>` タブを閉じる (gh-review-watcher 用)
+
+参考実装: `nix/home-manager/programs/claude-code/close-conflict-tab.sh`, `close-merged-review-tab.sh`

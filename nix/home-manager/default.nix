@@ -43,6 +43,7 @@ in
       curl
       jq
       ripgrep
+      coreutils
       tmux
       docker
       lazygit
@@ -160,6 +161,12 @@ in
   # Close merged/closed PR review tabs (triggered by gh-review-watcher on_poll)
   home.file.".local/bin/close-merged-review-tab" = {
     source = ./programs/claude-code/close-merged-review-tab.sh;
+    executable = true;
+  };
+
+  # Close "Conflict: <repo>#<num>" tab safely (used by pr-conflict-resolve handoff prompt)
+  home.file.".local/bin/close-conflict-tab" = {
+    source = ./programs/claude-code/close-conflict-tab.sh;
     executable = true;
   };
 

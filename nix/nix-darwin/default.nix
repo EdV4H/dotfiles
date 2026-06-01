@@ -109,6 +109,10 @@
           Minute = 30;
         }
       ];
+      # ログイン時にも一度実行。8:30 にPCがスリープ等で起動を逃しても、
+      # 起動後の最初のログインで取り戻せる。スクリプト側で
+      # ~/.cache/pr-conflict-check/last-run-date を見て同日二重実行は抑止する。
+      RunAtLoad = true;
       StandardOutPath = "/tmp/pr-conflict-check.out.log";
       StandardErrorPath = "/tmp/pr-conflict-check.err.log";
     };
