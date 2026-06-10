@@ -2,8 +2,16 @@
   description = "A very basic flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
+    # 2026-06-09: nixos-unstable HEAD (a799d3e3) で matplotlib-inline 0.2.1 の
+    # GitHub tarball が 404、 tornado test fail、 asciidoc xmllint SIGKILL 等で
+    # 連鎖 build 失敗。 2週間前の安定 rev に pin して回避。 binary cache hit 率も上がる。
+    nixpkgs.url = "github:nixos/nixpkgs/7e694d87970c8a280ac5420a5af2738a63ed2711";
+    # neovim-nightly-overlay: 一時的に無効化。 毎日 rev が更新されて nixpkgs を
+    # 引っ張り直すたびに binary cache が間に合わず asciidoc などの local build が
+    # 走り、 macOS sandbox の SIGKILL で詰まる。 通常の nixpkgs#neovim で間に合えば
+    # こちらに戻すまでもないが、 nightly に戻すなら url を有効化して home-manager/default.nix
+    # の overlay も復活させる。
+    # neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";

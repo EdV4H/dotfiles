@@ -158,3 +158,75 @@ TAB_ID=$(zellij action list-tabs --json | jq -r --arg n "$TAB_NAME" '.[] | selec
 - `close-merged-review-tab <num> <repo>` → `Review: <repo>#<num>` タブを閉じる (gh-review-watcher 用)
 
 参考実装: `nix/home-manager/programs/claude-code/close-conflict-tab.sh`, `close-merged-review-tab.sh`
+
+## PC 移行手順
+
+新しい Mac に乗り換えるときの手順。 dotfiles (nix) で OS / dotfile / launchd / skills は再現できるので、 ここでは **nix 管理外の state** (gitignored な `.env` / `.npmrc` / SSH 鍵 / cache 等) と **クローン済み repo** の引き継ぎだけを扱う。
+
+実装は `nix/home-manager/programs/claude-code/migration/` に 3 スクリプトあり、 `~/.local/bin/` に登録済み:
+
+- `migration-export` — gitignored secret + `~/.ssh` 等を tar.gz に固める
+- `migration-list-repos` — `~/Projects/` 配下の repo path と remote URL を TSV 化
+- `migration-restore` — 新 PC で展開 + 再 clone
+
+### 旧 PC 側
+
+```bash
+# dry-run でまず中身を確認
+MIGRATION_DRY_RUN=1 ~/.local/bin/migration-export
+
+# 実行
+~/.local/bin/migration-export
+~/.local/bin/migration-list-repos
+
+# 生成物 (~/migration-bundle-<ts>.{tar.gz,sha256,repos.txt}) を AirDrop / scp で新 PC へ
+```
+
+### 新 PC 側
+
+```bash
+# 1. nix セットアップ
+curl -fsSL https://install.determinate.systems/nix | sh -s -- install
+
+# 2. dotfiles を clone (gh CLI 未認証段階なので https 経由)
+git clone https://github.com/EdV4H/dotfiles ~/dotfiles
+cd ~/dotfiles
+
+# 2.5. 会社端末で Netskope (SWG) が常駐している場合、 cache.nixos.org の HTTPS を
+# MITM するため nix-daemon が cache から binary を取れない → local build 嵐になる。
+# Netskope CA を nix の信頼バンドルに追加してから nix run .#update する。
+#   (Netskope クライアントが無い PC ではこの step はスキップ可)
+if pgrep -f "Netskope Client.app" >/dev/null; then
+  security find-certificate -a -p -c "ca.atrae.goskope.com" \
+    /Library/Keychains/System.keychain | sudo tee /etc/ssl/atrae-netskope-ca.pem
+  # nix-darwin の security.pki.certificateFiles で永続化される。 ただし初回 bootstrap は
+  # まだ反映前なので、 nix-daemon 用のバンドルに手動 append:
+  sudo bash -c '
+    cp /etc/static/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt.tmp
+    cat /etc/ssl/atrae-netskope-ca.pem >> /etc/ssl/certs/ca-certificates.crt.tmp
+    mv /etc/ssl/certs/ca-certificates.crt.tmp /etc/ssl/certs/ca-certificates.crt
+  '
+  sudo launchctl kickstart -k system/org.nixos.nix-daemon
+fi
+
+nix run .#update
+
+# 3. bundle を展開して repo を再 clone (gh auth は先に通すこと)
+gh auth login
+~/.local/bin/migration-restore ~/Downloads/migration-bundle-*.tar.gz ~/Downloads/migration-bundle-*.repos.txt
+
+# 4. 他の認証
+aws sso login   # profile ごとに
+gcloud auth login && gcloud auth application-default login
+docker login
+
+# 5. node 環境
+volta install node@<version>
+
+# 6. Kiro CLI を使う場合 (退避された zprofile を戻す)
+[ -f ~/.zprofile.kiro.bak ] && mv ~/.zprofile ~/.zprofile.hm.bak && mv ~/.zprofile.kiro.bak ~/.zprofile
+```
+
+### 引き継がないもの
+
+`node_modules` / build 成果物 / `~/.volta/` / Claude Desktop の state / aws/gcloud の認証 SQLite — すべて新 PC で再構築 (token 失効リスクと keychain 結合の複雑さを避けるため)。

@@ -12,7 +12,11 @@ in
 {
   nixpkgs = {
     overlays = [
-      inputs.neovim-nightly-overlay.overlays.default
+      # inputs.neovim-nightly-overlay.overlays.default
+      # ↑ 一時無効化。 nightly が毎日 rev 更新で nixpkgs を引っ張り直し、
+      # binary cache が追いつかず local build が走って sandbox SIGKILL で詰まる。
+      # 戻すなら flake.nix の input も同時に復活させること。
+
       # Skip awscli2 tests to speed up builds
       (final: prev: {
         awscli2 = prev.awscli2.overrideAttrs (oldAttrs: {
@@ -24,6 +28,27 @@ in
         direnv = prev.direnv.overrideAttrs (oldAttrs: {
           doCheck = false;
         });
+      })
+      # Skip asciidoc manpage build — xmllint SIGKILL in macOS sandbox.
+      # Comes in via neovim-nightly → prettier → ... → asciidoc dependency chain.
+      # We don't actually need asciidoc man pages, so just skip the build step.
+      (final: prev: {
+        asciidoc = prev.asciidoc.overrideAttrs (oldAttrs: {
+          postBuild = "";
+          postInstall = "";
+        });
+      })
+      # Skip flaky tornado tests — test_gc TimeoutError and test_linear_performance
+      # AssertionError are environment-dependent (slow macOS sandbox), not real bugs.
+      # tornado is pulled in via neovim's black formatter.
+      (final: prev: {
+        python313 = prev.python313.override {
+          packageOverrides = pyfinal: pyprev: {
+            tornado = pyprev.tornado.overrideAttrs (_: {
+              doCheck = false;
+            });
+          };
+        };
       })
     ];
     config = {
@@ -167,6 +192,20 @@ in
   # Close "Conflict: <repo>#<num>" tab safely (used by pr-conflict-resolve handoff prompt)
   home.file.".local/bin/close-conflict-tab" = {
     source = ./programs/claude-code/close-conflict-tab.sh;
+    executable = true;
+  };
+
+  # PC migration helpers (旧 PC 側で export + list-repos、新 PC 側で restore)
+  home.file.".local/bin/migration-export" = {
+    source = ./programs/claude-code/migration/export-secrets.sh;
+    executable = true;
+  };
+  home.file.".local/bin/migration-list-repos" = {
+    source = ./programs/claude-code/migration/list-repos.sh;
+    executable = true;
+  };
+  home.file.".local/bin/migration-restore" = {
+    source = ./programs/claude-code/migration/restore.sh;
     executable = true;
   };
 

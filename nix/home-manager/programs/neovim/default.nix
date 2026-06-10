@@ -8,8 +8,10 @@ in
   viAlias = true;
   vimAlias = true;
 
-  # Neovim nightly overlay is already applied in home-manager/default.nix
-  package = pkgs.neovim;
+  # home-manager の programs.neovim が内部で wrap し直すので、 unwrapped を渡す。
+  # 旧 nightly overlay の頃は wrapped でも動いていたが、 通常の nixpkgs では
+  # wrapped が `.lua` 属性を持たないため、 wrapper.nix の評価で失敗する。
+  package = pkgs.neovim-unwrapped;
 
   # Extra packages available to Neovim
   extraPackages = with pkgs; [
