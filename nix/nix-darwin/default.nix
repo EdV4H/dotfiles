@@ -30,6 +30,9 @@
     onActivation = {
       autoUpdate = true;
       cleanup = "uninstall";
+      # `brew bundle install --cleanup` が `--force` 要求するようになった
+      # (Homebrew CLI 仕様変更) ので、 確認なしで cleanup を走らせる。
+      extraFlags = [ "--force-cleanup" ];
     };
     brews = [
       "goenv"
@@ -121,18 +124,6 @@
   security.sudo.extraConfig = ''
     yusukemaruyama ALL=(ALL) NOPASSWD: /run/current-system/sw/bin/darwin-rebuild
   '';
-
-  # 会社の Netskope (SWG) が全 HTTPS を MITM して `CN=ca.atrae.goskope.com` で
-  # 再署名するため、 nix-daemon が cache.nixos.org の証明書を信頼できず
-  # binary cache fallback で local build が大量発生する問題への対処。
-  #
-  # macOS keychain には Netskope CA が登録済みだが、 nix が使う
-  # /etc/ssl/certs/ca-certificates.crt には含まれていなかった。
-  # security.pki.certificateFiles で指定したファイルが ca-certificates.crt に
-  # 追記される。 ファイル本体は手動で /etc/ssl/atrae-netskope-ca.pem に配置:
-  #   security find-certificate -a -p -c "ca.atrae.goskope.com" \
-  #     /Library/Keychains/System.keychain | sudo tee /etc/ssl/atrae-netskope-ca.pem
-  security.pki.certificateFiles = [ "/etc/ssl/atrae-netskope-ca.pem" ];
 
   fonts = {
     packages = with pkgs; [
