@@ -1,12 +1,11 @@
 { pkgs, ... }:
 {
-  nix = {
-    optimise.automatic = true;
-    settings = {
-      experimental-features = "nix-command flakes";
-      max-jobs = 8;
-    };
-  };
+  # 新 PC は Determinate Systems の Nix installer を使っているので、 nix-darwin が
+  # Nix を管理しようとすると衝突する。 nix.enable = false にして Determinate に任せる。
+  # TODO: 旧 PC (classic nix-darwin) と新 PC (Determinate) で出し分け
+  # 現状旧 PC でもこれが false になり、 nix.optimise.automatic / max-jobs は効かないが、
+  # 実害は小さい。 必要なら home-manager の nix.settings 側で代替する。
+  nix.enable = false;
 
   system = {
     primaryUser = "yusukemaruyama";
