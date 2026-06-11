@@ -51,7 +51,7 @@ in
       fd
       direnv
       uv
-      # awscli2 # Temporarily disabled due to slow test phase
+      awscli2
       bruno
       mysql84
       lazysql
