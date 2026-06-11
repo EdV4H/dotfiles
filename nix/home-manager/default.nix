@@ -11,46 +11,13 @@ let
 in
 {
   nixpkgs = {
-    overlays = [
-      # inputs.neovim-nightly-overlay.overlays.default
-      # ↑ 一時無効化。 nightly が毎日 rev 更新で nixpkgs を引っ張り直し、
-      # binary cache が追いつかず local build が走って sandbox SIGKILL で詰まる。
-      # 戻すなら flake.nix の input も同時に復活させること。
-
-      # Skip awscli2 tests to speed up builds
-      (final: prev: {
-        awscli2 = prev.awscli2.overrideAttrs (oldAttrs: {
-          doCheck = false;
-        });
-      })
-      # Skip direnv tests — they hang on macOS
-      (final: prev: {
-        direnv = prev.direnv.overrideAttrs (oldAttrs: {
-          doCheck = false;
-        });
-      })
-      # Skip asciidoc manpage build — xmllint SIGKILL in macOS sandbox.
-      # Comes in via neovim-nightly → prettier → ... → asciidoc dependency chain.
-      # We don't actually need asciidoc man pages, so just skip the build step.
-      (final: prev: {
-        asciidoc = prev.asciidoc.overrideAttrs (oldAttrs: {
-          postBuild = "";
-          postInstall = "";
-        });
-      })
-      # Skip flaky tornado tests — test_gc TimeoutError and test_linear_performance
-      # AssertionError are environment-dependent (slow macOS sandbox), not real bugs.
-      # tornado is pulled in via neovim's black formatter.
-      (final: prev: {
-        python313 = prev.python313.override {
-          packageOverrides = pyfinal: pyprev: {
-            tornado = pyprev.tornado.overrideAttrs (_: {
-              doCheck = false;
-            });
-          };
-        };
-      })
-    ];
+    # 2026-06-11: Netskope の SSL Inspection Bypass が入って cache.nixos.org が
+    # 正常に引けるようになったので、 以前 SIGKILL / flaky test 回避のために入れていた
+    # overlay 群 (asciidoc / awscli2 / direnv / python313.tornado) を撤去。
+    # python313.override が python パッケージセット全体を新 hash にしてしまい、
+    # 巨大な local build (~1400 derivations) を誘発していた。
+    # 再発時のメモは git log で参照可能。
+    overlays = [ ];
     config = {
       allowUnfree = true;
     };
