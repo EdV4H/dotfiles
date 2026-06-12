@@ -53,7 +53,8 @@ nix build .#darwinConfigurations.ATR-LAP-OSX-YUSUKE-MARUYAMA.system
 - **nix/home-manager/default.nix**: User-level configuration
   - Shell configuration (zsh with aliases)
   - Development tools (git, gh, tmux, neovim, etc.)
-  - Session variables (VOLTA_HOME, Google Cloud project)
+  - Session variables (Google Cloud project, etc.)
+  - mise (node / npm グローバルツール管理)
   
 - **nix/nix-darwin/default.nix**: System-level macOS configuration
   - Nix daemon settings
@@ -83,7 +84,7 @@ nix build .#darwinConfigurations.ATR-LAP-OSX-YUSUKE-MARUYAMA.system
 - Search: ripgrep
 - Utilities: curl, jq, docker
 - AI tools: claude-code, gemini-cli, amazon-q-cli
-- Node.js: volta
+- Node.js: mise (node / ni / ccusage をグローバル管理)
 - Cloud: google-cloud-sdk
 
 ### Shell Aliases
@@ -220,8 +221,8 @@ aws sso login   # profile ごとに
 gcloud auth login && gcloud auth application-default login
 docker login
 
-# 5. node 環境
-volta install node@<version>
+# 5. node 環境 (mise が global=latest で自動管理。特定バージョンが要る時のみ)
+mise use -g node@<version>
 
 # 6. Kiro CLI を使う場合 (退避された zprofile を戻す)
 [ -f ~/.zprofile.kiro.bak ] && mv ~/.zprofile ~/.zprofile.hm.bak && mv ~/.zprofile.kiro.bak ~/.zprofile
@@ -236,4 +237,4 @@ fi
 
 ### 引き継がないもの
 
-`node_modules` / build 成果物 / `~/.volta/` / Claude Desktop の state / aws/gcloud の認証 SQLite — すべて新 PC で再構築 (token 失効リスクと keychain 結合の複雑さを避けるため)。
+`node_modules` / build 成果物 / `~/.local/share/mise/` (ランタイム実体) / Claude Desktop の state / aws/gcloud の認証 SQLite — すべて新 PC で再構築 (token 失効リスクと keychain 結合の複雑さを避けるため)。

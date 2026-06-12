@@ -69,7 +69,7 @@
     update = "cd ~/dotfiles && nix run .#update";
     rebuild = "cd ~/dotfiles && nix run .#update";
 
-    # Package manager shortcuts (requires @antfu/ni)
+    # Package manager shortcuts (@antfu/ni, mise で管理)
     # ni - install
     # nr - run
     # nx - execute
@@ -212,15 +212,7 @@
     export LANG="en_US.UTF-8"
     export LC_ALL="en_US.UTF-8"
 
-    # Ensure @antfu/ni is installed
-    if command -v volta &> /dev/null && ! command -v ni &> /dev/null; then
-      volta install @antfu/ni &> /dev/null
-    fi
-
-    # Ensure ccusage is installed
-    if command -v volta &> /dev/null && ! command -v ccusage &> /dev/null; then
-      volta install ccusage &> /dev/null
-    fi
+    # node / ni / ccusage は mise (programs.mise) がグローバル管理する。
   '';
 
   # Oh-my-zsh configuration

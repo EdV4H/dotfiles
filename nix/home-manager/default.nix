@@ -41,7 +41,6 @@ in
       lazygit
       claude-code
       gemini-cli
-      volta
       amazon-q-cli
       google-cloud-sdk
       fzf
@@ -62,8 +61,6 @@ in
     ];
 
     sessionVariables = {
-      VOLTA_HOME = "$HOME/.volta";
-      VOLTA_FEATURE_PNPM = "1";
       GOOGLE_CLOUD_PROJECT = "atrae-engineer-gu7335mbf";
       GOENV_ROOT = "$HOME/.goenv";
       CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = "65";
@@ -71,7 +68,6 @@ in
 
     sessionPath = [
       "$HOME/.local/bin"
-      "$HOME/.volta/bin"
       "$GOENV_ROOT/bin"
       "$HOME/go/bin"
     ];
@@ -79,6 +75,23 @@ in
 
   programs.home-manager.enable = true;
   programs.wezterm = import ./programs/wezterm/default.nix;
+
+  # mise: ランタイム管理 (旧 volta の置き換え)。 node は latest をグローバル固定。
+  #
+  # ni / ccusage 等の npm backend ツールはここでは管理しない。 npm.flatt.tech の
+  # min-release-age (リリース後 5 日は install 拒否) と mise の "latest"/レンジ解決が
+  # 衝突する (mise が先に最新版へ固定 → npm が age で弾く) ため。
+  # それらは nix 管理外の書き込み可能な ~/.config/mise/conf.d/*.toml で
+  # age を満たす版を明示ピンして ad-hoc 管理する。
+  programs.mise = {
+    enable = true;
+    enableZshIntegration = true;
+    globalConfig = {
+      tools = {
+        node = "latest";
+      };
+    };
+  };
 
   programs.bash.enable = false;
   programs.zsh = import ./programs/zsh/default.nix {

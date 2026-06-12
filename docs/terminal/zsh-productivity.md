@@ -208,21 +208,24 @@ oh-my-zsh = {
 };
 ```
 
-## 自動インストール
+## グローバルツール管理 (mise)
 
-zsh の envExtra で、必要なグローバルツールを自動インストール:
+node / npm グローバルツールは `programs.mise` が宣言的に管理する
+(`nix/home-manager/default.nix`):
 
-```bash
-# @antfu/ni (npm パッケージマネージャー抽象化)
-if command -v volta &> /dev/null && ! command -v ni &> /dev/null; then
-  volta install @antfu/ni
-fi
-
-# ccusage (Claude Code 使用量追跡)
-if command -v volta &> /dev/null && ! command -v ccusage &> /dev/null; then
-  volta install ccusage
-fi
+```nix
+programs.mise = {
+  enable = true;
+  globalConfig.tools = {
+    node = "latest";
+    "npm:@antfu/ni" = "latest";   # npm パッケージマネージャー抽象化
+    "npm:ccusage" = "latest";     # Claude Code 使用量追跡
+  };
+};
 ```
+
+`home-manager switch` 時に `~/.config/mise/config.toml` が生成され、
+シェル起動時の `mise activate` が node / ni / ccusage を PATH に通す。
 
 ## 主要ファイル
 

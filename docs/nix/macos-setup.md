@@ -90,8 +90,8 @@ home.packages = with pkgs; [
   # AI ツール
   claude-code gemini-cli amazon-q-cli
 
-  # 開発ツール
-  volta docker jq curl direnv uv
+  # 開発ツール (node は mise=programs.mise が管理)
+  docker jq curl direnv uv
 
   # データベース
   mysql84 lazysql bruno

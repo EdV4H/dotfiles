@@ -141,8 +141,9 @@ cat <<'EOF'
        mkdir -p "$(dirname "$HOME/$p")" && gh repo clone "$u" "$HOME/$p"
      done < ~/migration-failed-repos.txt
 
-3. 必要な node バージョンを Volta で入れ直す:
-     volta install node@<version>
+3. node は mise (programs.mise) が global=latest で自動管理する。
+   特定バージョンが要るなら:
+     mise use -g node@<version>
 
 4. Kiro CLI を使うなら退避された .zprofile を戻す:
      [ -f ~/.zprofile.kiro.bak ] && mv ~/.zprofile ~/.zprofile.hm.bak && mv ~/.zprofile.kiro.bak ~/.zprofile
