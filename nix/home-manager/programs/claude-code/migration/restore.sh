@@ -66,6 +66,10 @@ if [ -d "$SSH_DIR" ]; then
 fi
 
 # 4. repos を loop clone (MIGRATION_TARGET が / のときだけ。 そうでなければスキップ)
+# 注: bundle の tar 展開で `~/Projects/<repo>/.env` を復元するために `<repo>/` という
+# 空でない dir が事前に作られる。 そのまま `gh repo clone` すると
+# "destination path already exists and is not an empty directory" で必ず失敗するので、
+# 既存 dir を一旦退避 → clone → 退避した .env 等を rsync で戻す手順を取る。
 if [ "$TARGET" = "/" ]; then
   log "cloning repos from $REPOS_TXT ..."
   FAILED_REPOS="$HOME/migration-failed-repos.txt"
@@ -81,21 +85,37 @@ if [ "$TARGET" = "/" ]; then
       skipped=$((skipped + 1))
       continue
     fi
+    # 既存 dir (env だけ展開されてる状態) を退避
+    stash=""
+    if [ -d "$abspath" ]; then
+      stash="$abspath.migration-stash"
+      mv "$abspath" "$stash"
+    fi
     mkdir -p "$(dirname "$abspath")"
     if gh repo clone "$url" "$abspath" >/dev/null 2>&1; then
       cloned=$((cloned + 1))
       echo "  cloned: $relpath"
+      # clone 成功なら退避した .env 等を上書きで戻す
+      if [ -n "$stash" ] && [ -d "$stash" ]; then
+        rsync -a "$stash/" "$abspath/"
+        rm -rf "$stash"
+      fi
     else
       echo "$relpath"$'\t'"$url" >> "$FAILED_REPOS"
       failed=$((failed + 1))
       echo "  FAILED: $relpath  ($url)"
+      # clone 失敗なら退避を元に戻す (env を失わない)
+      if [ -n "$stash" ] && [ -d "$stash" ]; then
+        rmdir "$abspath" 2>/dev/null || true
+        mv "$stash" "$abspath"
+      fi
     fi
   done < "$REPOS_TXT"
 
   log "clone done: cloned=$cloned skipped=$skipped failed=$failed"
   if [ "$failed" -gt 0 ]; then
     echo "  failed repos recorded to: $FAILED_REPOS"
-    echo "  (`gh auth login` を済ませた後、手動で clone してください)"
+    echo "  (\`gh auth login\` を済ませた後、手動で clone してください)"
   fi
 else
   log "MIGRATION_TARGET=$TARGET (not /). repos clone をスキップ"
