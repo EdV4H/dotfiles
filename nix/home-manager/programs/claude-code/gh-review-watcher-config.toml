@@ -1,0 +1,37 @@
+# ポーリング間隔（秒）
+interval = 120
+
+# 新規PR検出時: ログファイルに記録（デバッグ用）
+[[on_new_pr]]
+name = "log"
+command = "echo '[NEW PR] {repo} #{number} {title} by @{author}' >> /tmp/gh-review-watcher-hooks.log"
+
+# 新規PR検出時: macOS通知
+[[on_new_pr]]
+name = "notify"
+command = """/Applications/Utilities/Notifier.app/Contents/MacOS/Notifier \
+  --type banner \
+  --title 'PR Review Request' \
+  --subtitle '{repo} #{number}' \
+  --message {title} \
+  --sound default"""
+
+# 新規PR検出時: yoloラベルがなければ新しいタブでClaude Codeにレビューさせる
+[[on_new_pr]]
+name = "review-tab"
+command = """echo '{labels}' | grep -q yolo || (zellij action new-tab --name 'Review: {repo}#{number}' --close-on-exit -- \
+  review-pr '{url}' '{number}' '{repo}' && zellij action go-to-previous-tab)"""
+
+# 毎ポーリング: "yolo" ラベルがついていたらClaude Codeでレビュー判定（PR単位で1回のみ実行）
+[[on_poll]]
+name = "yolo-review"
+command = """echo '[YOLO-CHECK] {repo}#{number} labels=[{labels}]' >> /tmp/gh-review-watcher-hooks.log && (echo '{labels}' | grep -q yolo && echo '[YOLO-RUN] {repo}#{number}' >> /tmp/gh-review-watcher-hooks.log && claude --dangerously-skip-permissions -p '/yolo-review {number} {repo}' >> /tmp/gh-review-watcher-hooks.log 2>&1 || echo '[YOLO-SKIP] {repo}#{number}' >> /tmp/gh-review-watcher-hooks.log)"""
+
+# PRがリストから消えた時（マージ・クローズ・レビュー解除等）: レビュータブを閉じる
+[[on_remove]]
+name = "close-review-tab"
+command = "echo '[REMOVE] {repo}#{number}' >> /tmp/gh-review-watcher-hooks.log && close-merged-review-tab '{number}' '{repo}' >> /tmp/gh-review-watcher-hooks.log 2>&1"
+
+# Enter押下時: ブラウザでPRを開く
+[on_select]
+command = "open {url}"

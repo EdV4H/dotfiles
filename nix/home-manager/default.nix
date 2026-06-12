@@ -187,4 +187,9 @@ in
     source = ./programs/zellij/layouts;
     recursive = true;
   };
+
+  # gh-review-watcher の hook 設定
+  xdg.configFile."gh-review-watcher/config.toml" = {
+    source = ./programs/claude-code/gh-review-watcher-config.toml;
+  };
 }
