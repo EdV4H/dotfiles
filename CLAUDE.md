@@ -225,6 +225,13 @@ volta install node@<version>
 
 # 6. Kiro CLI を使う場合 (退避された zprofile を戻す)
 [ -f ~/.zprofile.kiro.bak ] && mv ~/.zprofile ~/.zprofile.hm.bak && mv ~/.zprofile.kiro.bak ~/.zprofile
+
+# 7. poke-mate を使う場合: skill の symlink を貼る
+#    (poke-mate repo 内に skill 本体があり、 ~/.claude/skills から symlink で参照する設計)
+if [ -d ~/Projects/poke-mate ]; then
+  ln -sfn ~/Projects/poke-mate/skills/build-party-with-me ~/.claude/skills/poke-mate-build-party-with-me
+  ln -sfn ~/Projects/poke-mate/skills/review-party ~/.claude/skills/poke-mate-review-party
+fi
 ```
 
 ### 引き継がないもの
