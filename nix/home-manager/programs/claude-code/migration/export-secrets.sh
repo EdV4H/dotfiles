@@ -26,6 +26,8 @@ read -r -d '' INCLUDE_BASENAME_GLOBS <<'EOF' || true
 .env
 .env.*
 .envrc
+.dev.vars
+.dev.vars.*
 .npmrc
 .yarnrc
 .yarnrc.yml
@@ -113,6 +115,8 @@ collect_repo_secrets() {
       -name '.env' -o \
       -name '.env.*' -o \
       -name '.envrc' -o \
+      -name '.dev.vars' -o \
+      -name '.dev.vars.*' -o \
       -name '.npmrc' -o \
       -name '.yarnrc' -o \
       -name '.yarnrc.yml' -o \
