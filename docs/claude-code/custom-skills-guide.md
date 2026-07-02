@@ -16,7 +16,7 @@ Claude Code の **Skills** 機能を使い、`SKILL.md` ファイルとしてワ
 
 ```
 ~/.claude/skills/           ← グローバルスキル
-  renovate-merge/
+  renovate/
     SKILL.md
   update-pr/
     SKILL.md
@@ -65,30 +65,32 @@ description: "スキルの一文説明"
 ```
 
 **ポイント**:
-- frontmatter の `name` がスラッシュコマンド名になる（`/renovate-merge`）
+- frontmatter の `name` がスラッシュコマンド名になる（`/renovate`）
 - `## Behavior` セクションにステップバイステップの手順を書く
 - bash コードブロックで具体的なコマンドを示す — Claude はこれを実行する
 - 条件分岐やエラーハンドリングも自然言語で記述できる
 
 ## 自作スキル一覧
 
-### 1. `/renovate-merge` — Renovate PR 一括処理
+### 1. `/renovate` — Renovate PR 一括処理（自動修正つき）
 
-Renovate が作成した依存関係更新 PR を自動で rebase → CI 待機 → squash merge する。失敗した PR には GitHub Issue を作成してスキップ。
+Renovate が作成した依存関係更新 PR を自動で rebase → CI 待機 → squash merge する。CI が落ちた場合は原因を分析してコード修正を試み（最大2回）、修正内容は必ず PR コメントと最終サマリでレポートする。直せなければ GitHub Issue を作成してスキップ。
 
 **使いどころ**: 週末や朝一に溜まった Renovate PR を一括処理
 
 ```
-/renovate-merge
+/renovate [owner/repo]   # 省略時はカレントの repo
 ```
 
 主な処理フロー:
 1. `gh pr list --author "app/renovate"` で対象 PR を取得
 2. 各 PR を順番に処理（並行処理すると rebase 競合が起きるため）
 3. `gh pr update-branch --rebase` → `gh pr checks --watch` → `gh pr merge --squash --auto`
-4. 失敗時は `gh issue create` で Issue を作成
+4. CI 失敗時は失敗ログから原因を特定し、PR ブランチを checkout して修正 → push → CI 再待機（最大2回）
+5. 修正した場合は PR コメント + 最終サマリで必ずレポート
+6. 直らなければ `gh issue create` で Issue を作成してスキップ
 
-→ 詳細: [`skills/renovate-merge/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/renovate-merge/SKILL.md)
+→ 詳細: [`skills/renovate/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/renovate/SKILL.md)
 
 ### 2. `/update-pr` — 既存 PR の更新
 
@@ -213,7 +215,7 @@ CI の待機など時間がかかる処理は明示的にバックグラウン�
 
 | ファイル | 役割 |
 |---------|------|
-| [`skills/renovate-merge/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/renovate-merge/SKILL.md) | Renovate PR 一括処理 |
+| [`skills/renovate/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/renovate/SKILL.md) | Renovate PR 一括処理 |
 | [`skills/update-pr/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/update-pr/SKILL.md) | 既存 PR 更新 |
 | [`skills/worktree-cleanup/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/worktree-cleanup/SKILL.md) | Worktree クリーンアップ |
 | [`skills/tab-name/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/tab-name/SKILL.md) | タブ名設定 |

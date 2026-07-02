@@ -5,7 +5,7 @@ Nix 管理の macOS dotfiles + Claude Code マルチエージェントワーク�
 ## ハイライト
 
 - **Zellij + Claude Code 統合** — タブ名が自動で 🤖(思考中) / ✅(完了) に切り替わり、10プロジェクトの並行作業を一目で管理
-- **カスタムスキル** — `/renovate-merge`, `/update-pr`, `/worktree-cleanup` など PR ライフサイクルを自動化する6つのスキル
+- **カスタムスキル** — `/renovate`, `/update-pr`, `/worktree-cleanup` など PR ライフサイクルを自動化する6つのスキル
 - **日報自動生成** — Git コミット + Claude Code セッションログ + Google Tasks → Notion に自動投稿
 - **自作 Rust TUI ツール** — flake input として管理し、dotfiles と一緒にインストール
 - **ワンコマンドセットアップ** — `nix run .#update` で CLI ツール、GUI アプリ、macOS 設定、シェル設定すべてを適用
@@ -78,7 +78,7 @@ dotfiles/
     │       │   └── skills/
     │       │       ├── daily-report/
     │       │       ├── pane-name/
-    │       │       ├── renovate-merge/
+    │       │       ├── renovate/
     │       │       ├── tab-name/
     │       │       ├── update-pr/
     │       │       └── worktree-cleanup/

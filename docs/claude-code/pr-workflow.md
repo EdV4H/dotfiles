@@ -12,7 +12,7 @@ PR 作成の手順が多い: 変更のコミット分割、PR 作成、Copilot �
 
 ```
 ┌─────────────┐    ┌────────────┐    ┌──────────────────┐    ┌──────────────────┐
-│ /pull-request│───▶│ /update-pr │───▶│ /renovate-merge  │    │/worktree-cleanup │
+│ /pull-request│───▶│ /update-pr │───▶│ /renovate  │    │/worktree-cleanup │
 │  PR 作成     │    │  PR 更新    │    │  依存関係更新     │    │  後片付け         │
 └─────────────┘    └────────────┘    └──────────────────┘    └──────────────────┘
 ```
@@ -57,17 +57,18 @@ PR 作成の手順が多い: 変更のコミット分割、PR 作成、Copilot �
 
 **更新判断**: スコープが変わった場合はタイトル・説明を更新、typo 修正程度なら更新しない。
 
-### `/renovate-merge` — Renovate PR 一括処理
+### `/renovate` — Renovate PR 一括処理（自動修正つき）
 
 ```
-/renovate-merge
+/renovate [owner/repo]   # 省略時はカレントの repo
 ```
 
 **処理フロー**:
 1. `gh pr list --author "app/renovate"` で対象 PR を取得
 2. 各 PR を**順番に**処理（並行だと rebase 競合が起きる）
 3. rebase → CI 待機（15分タイムアウト） → squash merge
-4. 失敗した PR は GitHub Issue を作成してスキップ
+4. CI 失敗時は原因を分析してコード修正を試みる（最大2回）。修正は PR コメント + サマリで必ずレポート
+5. 直らなかった PR は GitHub Issue を作成してスキップ
 
 **出力例**:
 ```
@@ -122,7 +123,7 @@ git worktree add .claude/worktrees/feature-x -b feature/awesome
 
 ```bash
 # Renovate PR を一括処理
-/renovate-merge
+/renovate
 ```
 
 ## 主要ファイル
@@ -131,7 +132,7 @@ git worktree add .claude/worktrees/feature-x -b feature/awesome
 |---------|------|
 | `~/.claude/commands/pull-request.md` | PR 作成コマンド |
 | [`skills/update-pr/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/update-pr/SKILL.md) | PR 更新スキル |
-| [`skills/renovate-merge/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/renovate-merge/SKILL.md) | Renovate PR 処理スキル |
+| [`skills/renovate/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/renovate/SKILL.md) | Renovate PR 処理スキル |
 | [`skills/worktree-cleanup/SKILL.md`](../../nix/home-manager/programs/claude-code/skills/worktree-cleanup/SKILL.md) | Worktree クリーンアップスキル |
 
 ## カスタマイズ
@@ -147,7 +148,7 @@ gh pr merge <NUMBER> --merge --auto --delete-branch
 
 ### CI タイムアウトの変更
 
-`/renovate-merge` の CI 待機は 15 分。変更する場合は SKILL.md の記述を修正。
+`/renovate` の CI 待機は 15 分。変更する場合は SKILL.md の記述を修正。
 
 ### Copilot レビューを無効化
 
@@ -158,4 +159,4 @@ gh pr merge <NUMBER> --merge --auto --delete-branch
 - **auto-merge の前提条件**: リポジトリの Settings → General で "Allow auto-merge" が有効である必要がある
 - **Copilot レビュー**: GitHub Copilot のレビュー機能が有効なリポジトリでのみ動作。無効なリポジトリでは API コールが失敗するがスキップされる
 - **force push の安全性**: `/update-pr` は force push が必要な場合、必ずユーザーに確認してから `--force-with-lease` を使う
-- **Renovate の順序**: `/renovate-merge` は PR を1つずつ処理する。これは rebase 後に他の PR のベースが変わるため。並行処理すると高確率でコンフリクトする
+- **Renovate の順序**: `/renovate` は PR を1つずつ処理する。これは rebase 後に他の PR のベースが変わるため。並行処理すると高確率でコンフリクトする
