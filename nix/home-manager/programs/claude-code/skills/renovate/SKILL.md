@@ -30,34 +30,58 @@ gh pr list --author "app/renovate" --state open -R <owner/repo> \
 
 **必ず逐次処理**。1件 merge / rebase すると他 PR の状態が変わるため、並行処理しない。
 
-各 PR について:
+各 PR について。**順序が重要**: 先に「ベースへの追従（rebase / conflict 解消）」を完了させ、
+**CI が実際にその最新 head に対して走る状態**にしてから、CI 結果を評価・診断する。
+古い（rebase 前の）CI run を見て失敗診断に入ってはいけない。
 
-#### 2a: mergeability / CI 状態を確認
+#### 2a: mergeability を確認（CI 評価より先）
 
 ```bash
-gh pr view <NUMBER> --json mergeable,statusCheckRollup,title,url,headRefName
+gh pr view <NUMBER> --json mergeable,mergeStateStatus,baseRefName,statusCheckRollup,title,url,headRefName
 ```
 
-`mergeable` が `CONFLICTING` なら 2-fix へ（conflict も修正対象。lockfile だけの conflict なら
-rebase 後の lockfile 再生成で直ることが多い）。手に負えなければ 2-issue へ。
+まず `mergeable` を見る:
 
-#### 2b: rebase
+- **`CONFLICTING` / `mergeStateStatus: DIRTY`** → **2b でコンフリクト解消が最優先**。
+  ⚠️ 重要: ベースとコンフリクトしている PR は GitHub がテスト用マージコミットを作れないため、
+  **`pull_request` トリガーの CI（テスト等）が一切走らない**。この状態で `statusCheckRollup` に
+  出ている失敗は **rebase 前の古い run** であり、それを見て 2-fix の原因診断に入るのは誤り。
+  先にコンフリクトを解消して CI を走らせること。
+- `MERGEABLE` / `UNKNOWN` → 2b へ（rebase で最新化してから CI を確定させる）。
+
+#### 2b: ベースへ追従（rebase / conflict 解消）
 
 ```bash
 gh pr update-branch <NUMBER> --rebase
 ```
 
-失敗したら fallback: `gh pr comment <NUMBER> --body "@renovatebot rebase"` を投稿して 60 秒待つ。
-それでもダメなら 2-fix へ。
+- 成功 → 2c へ。
+- **conflict で失敗する場合**（`Cannot update PR branch due to conflicts`）→ ローカルで解消:
+  1. fix-2 の要領で対象 repo を用意（**フル clone 推奨**。shallow / single-branch だと
+     ベースブランチへの rebase が不安定）。ベースブランチ（例 `develop`）も fetch する。
+  2. `git rebase origin/<baseRef>`。コンフリクトが **lockfile のみ**なら、ソース側
+     （package.json / catalog）の conflict を解消 → `pnpm install --lockfile-only` で
+     lockfile を再生成（手で lockfile をマージしない）。
+  3. push（force-with-lease）。ベースが速く動く repo では再 conflict しやすい点に留意。
+- `update-branch` 自体が使えない repo なら fallback: `@renovatebot rebase` コメント → 60秒待つ。
+- 解消の見込みが立たなければ 2-issue へ。
 
-#### 2c: CI 完了を待つ
+#### 2c: 最新 head に対する CI を確定させて待つ
+
+rebase 後は **新しい head SHA に対して CI が新規に起動したこと**を確認してから待つ
+（古い run の結果を使わない）。`pull_request` 系ワークフローが走っているかも確認する:
 
 ```bash
 gh pr checks <NUMBER> --watch --fail-fast
 ```
 
 Bash tool の `run_in_background` で実行し、完了通知を待つ。timeout は **15分/PR**。
-timeout したら 2-issue へ。
+
+- CI が全部 pass → 2d へ。
+- 一部でも fail → 2-fix へ。
+- 期待するチェック（テスト等）が起動していない場合、コンフリクト未解消や承認待ち
+  （bot 作者 PR で `action_required`）を疑う。`gh run list --branch <BRANCH>` で状態確認。
+- timeout したら 2-issue へ。
 
 #### 2d: merge
 
@@ -195,6 +219,9 @@ ISSUE_EOF
 
 ## Notes
 
+- **rebase → CI 確定 → 診断 の順序を守る** — コンフリクトした PR では `pull_request` 系 CI が走らない。
+  Labeler など `pull_request_target` 系だけ緑になっていても、テストが走っていないだけのことがある。
+  `statusCheckRollup` の失敗が「今の head の結果か、rebase 前の古い run か」を必ず区別する
 - **逐次処理を厳守** — 1件の merge が他 PR の conflict / CI 状態を変える
 - merge は `--squash`。`--auto` を付けているので checks 完了前に merge コマンドが返っても、通過後に自動 merge される
 - 修正の試行は **最大2回/PR**、CI 待ちは **15分/PR**。超えたら issue 化してスキップ
