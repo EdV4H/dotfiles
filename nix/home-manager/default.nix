@@ -157,6 +157,12 @@ in
     executable = true;
   };
 
+  # Renovate PR scheduled processor (entrypoint, called by launchd every few hours)
+  home.file.".local/bin/renovate-scheduled" = {
+    source = ./programs/claude-code/renovate-scheduled.sh;
+    executable = true;
+  };
+
   # PR review script (triggered by gh-review-watcher)
   home.file.".local/bin/review-pr" = {
     source = ./programs/claude-code/review-pr.sh;

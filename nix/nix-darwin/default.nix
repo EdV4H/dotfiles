@@ -120,6 +120,26 @@
     };
   };
 
+  # Renovate PR を数時間おきに自動処理 (rebase→CI待ち→auto-approve→merge、
+  # 落ちたら自動修正、直らなければ issue 化)。対象 repo は
+  # renovate-scheduled.sh の REPOS 配列で管理。多重起動は script 側の lock で抑止。
+  launchd.user.agents.renovate-scheduled = {
+    serviceConfig = {
+      ProgramArguments = [
+        "/bin/sh"
+        "-c"
+        ''
+          /Users/yusukemaruyama/.local/bin/renovate-scheduled
+        ''
+      ];
+      # 3時間ごと。1回のパスが長引いても launchd は多重起動しない
+      # (前回が動作中なら次の発火は待たされる)。script 側 lock で二重も防止。
+      StartInterval = 10800;
+      StandardOutPath = "/tmp/renovate-scheduled.out.log";
+      StandardErrorPath = "/tmp/renovate-scheduled.err.log";
+    };
+  };
+
   security.sudo.extraConfig = ''
     yusukemaruyama ALL=(ALL) NOPASSWD: /run/current-system/sw/bin/darwin-rebuild
   '';
