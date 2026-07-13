@@ -9,6 +9,12 @@ set -uo pipefail
 export PATH=$HOME/.local/share/mise/shims:/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export HOME=/Users/yusukemaruyama
 
+# 非対話 (launchd) では claude のサブスク認証 (ログインキーチェーン) が読めず
+# "Not logged in" になる。`claude setup-token` で発行した長寿命 OAuth トークンを
+# gitignore 対象の秘密ファイルに置き、env で渡す (サブスクのまま・API 従量課金なし)。
+# 発行手順:  claude setup-token  → 出力を下記ファイルに保存 (chmod 600)。
+TOKEN_FILE="$HOME/.config/renovate/oauth-token"
+
 # 対象リポジトリ。増やす時はここに足す。
 REPOS=(
   "Atrae/wevox-mono-web"
@@ -38,6 +44,15 @@ trap 'rm -rf "$LOCK_DIR"' EXIT
 
 if [ ! -x "$CLAUDE" ]; then
   log "ERROR: claude が見つからない ($CLAUDE)"
+  exit 1
+fi
+
+if [ -f "$TOKEN_FILE" ]; then
+  CLAUDE_CODE_OAUTH_TOKEN="$(tr -d '[:space:]' < "$TOKEN_FILE")"
+  export CLAUDE_CODE_OAUTH_TOKEN
+else
+  log "ERROR: OAuth トークン未設定 ($TOKEN_FILE)。"
+  log "  対話で 'claude setup-token' を実行し、出力を上記ファイルに保存 (chmod 600) してください。"
   exit 1
 fi
 
