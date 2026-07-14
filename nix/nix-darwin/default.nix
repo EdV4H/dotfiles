@@ -47,6 +47,7 @@
       "nani"
       "amazon-workspaces"
       "claude"
+      "codexbar"
     ];
   };
 
