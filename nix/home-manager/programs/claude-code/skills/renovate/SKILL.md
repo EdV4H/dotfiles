@@ -102,6 +102,9 @@ gh pr merge <NUMBER> -R <owner/repo> --squash --auto --delete-branch
 - `--auto` は **CI が全部緑になった時点で GitHub がマージ**する。緑なら即、pending なら後で自動。
   **skill 側は待たない**。approve は CI を無効化しない（`--auto` は必須チェック通過が前提）ので、
   CI 未完でも先に approve + auto-merge しておくのは安全。
+- **merge method のフォールバック**: repo の ruleset が squash を拒否する場合
+  （`Merge method ... is not allowed` 等のエラー）、`--merge` → `--rebase` の順で
+  試す。どれか許可されている方式を使えばよい（`--delete-branch` はそのまま）。
 - **major バージョンアップは自動 approve しない**。2-issue で人間に回す
   （無人で破壊的変更を本番に入れない）。minor / patch のみ auto-approve 対象。
   major/minor/patch は PR タイトル（`to vN` / `to vN.M`）や `labels` から判定する。
