@@ -1,13 +1,15 @@
 ---
 name: renovate
 version: 1.0.0
-description: "Process Renovate PRs in a repo: rebase, wait for CI, merge. If CI fails, analyze and attempt a fix (max 2 tries), always reporting every fix as a PR comment and in the final summary. File an issue and skip if unfixable."
+description: "Process Renovate PRs in a repo without blocking on CI: rebase/resolve conflicts, and if CI is currently failing attempt one fix, then approve and enable GitHub auto-merge (CI gates the actual async merge). Report every fix as a PR comment and in the summary. Runs headless (claude -p). Skip majors and unfixable PRs to an issue."
 ---
 
 # renovate
 
-指定リポジトリの open な Renovate PR を1件ずつ処理する: rebase → CI 待ち → 通れば merge。
-CI が落ちたら**原因を分析してコード修正を試みる**（旧 renovate-merge との差分）。
+指定リポジトリの open な Renovate PR を1件ずつ処理する: rebase / conflict 解消 →
+CI が今 fail なら**原因を分析して1回修正** → approve して **GitHub の auto-merge を有効化**。
+**CI は待たない**（`claude -p` の one-shot でも全 PR を捌けるようにするため）。実際のマージは
+CI 緑化時に GitHub が非同期で行う。CI がまだ緑でない PR は次回 run で再評価される。
 **加えた修正は必ずレポートする** — PR コメントと最終サマリの両方に残すこと。修正したのに報告しない、は許されない。
 
 ## Arguments
@@ -30,81 +32,90 @@ gh pr list --author "app/renovate" --state open -R <owner/repo> \
 
 **必ず逐次処理**。1件 merge / rebase すると他 PR の状態が変わるため、並行処理しない。
 
+**CI を同期的に待たない**。この skill は `claude -p`（headless・one-shot）でも走る。
+`gh pr checks --watch` でブロックすると one-shot 実行が最初の CI 待ちで力尽きて終了し、
+何も進まない。代わりに各 PR で「rebase → 必要なら修正 → approve → auto-merge を有効化」
+までを**待たずに**やり、**実際のマージは GitHub の auto-merge（CI 緑化時に非同期実行）に委ねる**。
+CI がまだ赤い/未完の PR は次回 run で再評価される（放置で徐々に片付く）。
+
 各 PR について。**順序が重要**: 先に「ベースへの追従（rebase / conflict 解消）」を完了させ、
-**CI が実際にその最新 head に対して走る状態**にしてから、CI 結果を評価・診断する。
+CI がその最新 head に対して走る状態にしてから、現在の CI 状態を**スナップショットで**評価する。
 古い（rebase 前の）CI run を見て失敗診断に入ってはいけない。
 
 #### 2a: mergeability を確認（CI 評価より先）
 
 ```bash
-gh pr view <NUMBER> --json mergeable,mergeStateStatus,baseRefName,statusCheckRollup,title,url,headRefName
+gh pr view <NUMBER> -R <owner/repo> --json mergeable,mergeStateStatus,baseRefName,statusCheckRollup,title,url,headRefName,labels,commits
 ```
 
 まず `mergeable` を見る:
 
 - **`CONFLICTING` / `mergeStateStatus: DIRTY`** → **2b でコンフリクト解消が最優先**。
-  ⚠️ 重要: ベースとコンフリクトしている PR は GitHub がテスト用マージコミットを作れないため、
-  **`pull_request` トリガーの CI（テスト等）が一切走らない**。この状態で `statusCheckRollup` に
-  出ている失敗は **rebase 前の古い run** であり、それを見て 2-fix の原因診断に入るのは誤り。
-  先にコンフリクトを解消して CI を走らせること。
-- `MERGEABLE` / `UNKNOWN` → 2b へ（rebase で最新化してから CI を確定させる）。
+  ⚠️ ベースとコンフリクトしている PR は GitHub がテスト用マージコミットを作れず、
+  **`pull_request` トリガーの CI（テスト等）が走らない**。`statusCheckRollup` に出ている
+  失敗は rebase 前の古い run なので、それを見て 2-fix に入るのは誤り。先に解消する。
+- `MERGEABLE` / `UNKNOWN` → 2b へ。
 
 #### 2b: ベースへ追従（rebase / conflict 解消）
 
 ```bash
-gh pr update-branch <NUMBER> --rebase
+gh pr update-branch <NUMBER> -R <owner/repo> --rebase
 ```
 
-- 成功 → 2c へ。
+- 成功 or 「already up to date」→ 2c へ。
 - **conflict で失敗する場合**（`Cannot update PR branch due to conflicts`）→ ローカルで解消:
   1. fix-2 の要領で対象 repo を用意（**フル clone 推奨**。shallow / single-branch だと
      ベースブランチへの rebase が不安定）。ベースブランチ（例 `develop`）も fetch する。
   2. `git rebase origin/<baseRef>`。コンフリクトが **lockfile のみ**なら、ソース側
      （package.json / catalog）の conflict を解消 → `pnpm install --lockfile-only` で
      lockfile を再生成（手で lockfile をマージしない）。
-  3. push（force-with-lease）。ベースが速く動く repo では再 conflict しやすい点に留意。
-- `update-branch` 自体が使えない repo なら fallback: `@renovatebot rebase` コメント → 60秒待つ。
+  3. commit に修正マーカー `[renovate-auto-fix]` を含め、push（force-with-lease）。
+- `update-branch` 自体が使えない repo なら fallback: `@renovatebot rebase` コメント。
 - 解消の見込みが立たなければ 2-issue へ。
 
-#### 2c: 最新 head に対する CI を確定させて待つ
+rebase / push した直後は**待たない**。2c で現在の CI 状態だけ見る。
 
-rebase 後は **新しい head SHA に対して CI が新規に起動したこと**を確認してから待つ
-（古い run の結果を使わない）。`pull_request` 系ワークフローが走っているかも確認する:
+#### 2c: 現在の CI 状態をスナップショット評価（待たない）
+
+`--watch` は使わない。今の状態だけ取る:
 
 ```bash
-gh pr checks <NUMBER> --watch --fail-fast
+gh pr checks <NUMBER> -R <owner/repo>
 ```
 
-Bash tool の `run_in_background` で実行し、完了通知を待つ。timeout は **15分/PR**。
+- **全て pass** → 2d（approve + auto-merge。CI 緑なので即マージされる）。
+- **pending / まだ走り出していない** → 2d（approve + `--auto` を有効化。GitHub が緑化時に自動マージ）。
+  ⚠️ ただし rebase 直後で `pull_request` CI がまだ起動していないだけかもしれない。
+  その場合も approve + `--auto` にしておけば、CI が緑になった時点で GitHub がマージする。待たない。
+- **fail** → 2-fix へ（ただし再修正ループ防止ガードあり。下記参照）。
 
-- CI が全部 pass → 2d へ。
-- 一部でも fail → 2-fix へ。
-- 期待するチェック（テスト等）が起動していない場合、コンフリクト未解消や承認待ち
-  （bot 作者 PR で `action_required`）を疑う。`gh run list --branch <BRANCH>` で状態確認。
-- timeout したら 2-issue へ。
+#### 2d: approve → auto-merge 有効化（待たない）
 
-#### 2d: approve → merge
-
-CI が全部通ったら、まず **review 要件を満たすため approve** する。Renovate PR は
-作者が bot（`app/renovate`）で自分の PR ではないので、承認してよい:
+Renovate PR は作者が bot（`app/renovate`）で自分の PR ではないので approve してよい:
 
 ```bash
 gh pr review <NUMBER> -R <owner/repo> --approve \
-  --body "CI green. Auto-approved by renovate skill."
-gh pr merge <NUMBER> --squash --auto --delete-branch
+  --body "Auto-approved by renovate skill (CI gates the actual merge)."
+gh pr merge <NUMBER> -R <owner/repo> --squash --auto --delete-branch
 ```
 
-- `REVIEW_REQUIRED` なリポジトリでも、この approve で `--auto` merge が走る（CI 緑が前提）。
-- レビュー不要なリポジトリでは approve は無害（そのまま merge）。
-- **ただし major バージョンアップは自動 approve しない**。CI が通っていても、
-  自動 approve せず 2-issue で人間の確認に回す（破壊的変更を無人で本番に入れない）。
-  minor / patch のみ自動 approve + merge の対象とする。
+- `--auto` は **CI が全部緑になった時点で GitHub がマージ**する。緑なら即、pending なら後で自動。
+  **skill 側は待たない**。approve は CI を無効化しない（`--auto` は必須チェック通過が前提）ので、
+  CI 未完でも先に approve + auto-merge しておくのは安全。
+- **major バージョンアップは自動 approve しない**。2-issue で人間に回す
+  （無人で破壊的変更を本番に入れない）。minor / patch のみ auto-approve 対象。
+  major/minor/patch は PR タイトル（`to vN` / `to vN.M`）や `labels` から判定する。
+- `Queued for auto-merge: <TITLE> (#<NUMBER>)` と報告して次の PR へ。
 
-`Merged: <TITLE> (#<NUMBER>)` と報告して次の PR へ。
+### Step 2-fix: CI 失敗時の修正（1回 / 再修正ループ防止）
 
-### Step 2-fix: CI 失敗時の修正ループ（最大2回試行）
+CI が**現在 fail** の PR は issue 化する前に修正を試みる。ただし one-shot・複数 run に
+またがるため、**同じ PR を毎 run 直し続けない**ガードを最初に効かせる:
 
-CI が落ちた PR は issue 化してスキップする前に、修正を試みる。
+- **再修正ループ防止**: HEAD commit のメッセージに既に `[renovate-auto-fix]` が入っていて
+  かつ CI がまだ fail なら、**前回の自動修正が効かなかった** ということ。もう直さず 2-issue へ。
+- flaky が疑われる時のみ `gh run rerun <RUN_ID> --failed` を1回（これは修正に数えない）。
+- それ以外（まだ自分が直していない fail）なら以下で1回だけ修正を試みる。
 
 #### fix-1: 失敗ログを取得して原因を特定
 
@@ -131,8 +142,9 @@ gh run view <RUN_ID> --log-failed -R <owner/repo>
 
 - 修正は**最小限**。失敗の原因に直結する変更のみ。ついでのリファクタ・整形はしない。
 - push 前に `git diff` を確認する。
-- コミットメッセージは何をなぜ直したか分かるように書く
-  （例: `fix: eslint v9 の flat config 移行に伴い .eslintrc を eslint.config.js へ変換`）。
+- コミットメッセージは何をなぜ直したか分かるように書き、**必ずマーカー
+  `[renovate-auto-fix]` を含める**（次回 run の再修正ループ防止に使う）
+  （例: `fix: eslint v9 flat config 移行に伴い設定を変換 [renovate-auto-fix]`）。
 - `--no-verify` は使わない。
 - `git push` で PR ブランチへ push。
 
@@ -161,10 +173,12 @@ COMMENT_EOF
 
 同時に、最終サマリ用に「PR番号 / 原因 / 修正内容 / 修正コミット SHA」を記録しておく。
 
-#### fix-5: CI を再度待つ
+#### fix-5: approve + auto-merge して次へ（待たない）
 
-2c と同様に `gh pr checks --watch`。通れば 2d (merge) へ。
-落ちたら試行 2 回目として fix-1 から繰り返す。**2 回試して直らなければ 2-issue へ**。
+修正 push 後は **CI を待たない**。2d と同じく approve + `--auto` merge を有効化し、次の PR へ進む。
+GitHub が CI 緑化時にマージする。もし修正が不十分で CI が再び赤なら、次回 run の 2-fix 冒頭の
+「再修正ループ防止」ガードが検知し（HEAD が `[renovate-auto-fix]` かつ fail）、その時に 2-issue へ回す。
+このため 1 run 内では **1 PR につき修正は1回**まで。
 
 ### Step 2-issue: 修正不能ならスキップ
 
@@ -206,14 +220,16 @@ ISSUE_EOF
 ### Step 3: 最終サマリ（必須）
 
 全 PR 処理後、必ず以下の形式でサマリを出力する。**自動修正した PR が 1 件でもあれば「自動修正の詳細」セクションは省略不可**。
+skill は待たないので「Merged」ではなく「auto-merge に載せた（Queued）」を報告する
+（実際のマージは後で GitHub が CI 緑化時に行う）。
 
 ```
-## Renovate 処理完了 (<owner/repo>)
+## Renovate 処理 (<owner/repo>)
 
-- Merged: N 件（うち自動修正 K 件）
-- Skipped: M 件（issue 化）
+- Queued for auto-merge: N 件（うち自動修正 K 件）  ← approve + --auto 済み。CI 緑で自動マージ
+- Skipped: M 件（issue 化 / major など）
 
-### Merged
+### Queued
 - <TITLE> (#<NUMBER>)
 - <TITLE> (#<NUMBER>) ← 自動修正あり
 
@@ -223,17 +239,21 @@ ISSUE_EOF
   → PR コメント: <コメント URL>
 
 ### Skipped
-- <TITLE> (#<NUMBER>) → Issue #<ISSUE_NUMBER>
+- <TITLE> (#<NUMBER>) → Issue #<ISSUE_NUMBER> / major のため人間確認
 ```
 
 ## Notes
 
-- **rebase → CI 確定 → 診断 の順序を守る** — コンフリクトした PR では `pull_request` 系 CI が走らない。
-  Labeler など `pull_request_target` 系だけ緑になっていても、テストが走っていないだけのことがある。
-  `statusCheckRollup` の失敗が「今の head の結果か、rebase 前の古い run か」を必ず区別する
-- **逐次処理を厳守** — 1件の merge が他 PR の conflict / CI 状態を変える
-- merge は `--squash`。`--auto` を付けているので checks 完了前に merge コマンドが返っても、通過後に自動 merge される
-- 修正の試行は **最大2回/PR**、CI 待ちは **15分/PR**。超えたら issue 化してスキップ
+- **CI を待たない** — `--watch` は禁止。approve + `--auto` merge を有効化して次へ進み、
+  実際のマージは GitHub の auto-merge（CI 緑化時に非同期実行）に委ねる。これにより
+  `claude -p`（one-shot）でも全 PR を1回で捌ける。緑でない PR は次回 run で再評価
+- **再修正ループ防止** — 修正 commit には必ず `[renovate-auto-fix]` マーカーを付ける。
+  次回 run で「HEAD が `[renovate-auto-fix]` かつ CI 依然 fail」なら再修正せず issue 化。
+  1 run 内では 1 PR につき修正は 1 回まで
+- **rebase → CI 状態確認 → 診断 の順序を守る** — コンフリクトした PR では `pull_request` 系 CI が走らない。
+  Labeler など `pull_request_target` 系だけ緑でも、テストが走っていないだけのことがある。
+  `statusCheckRollup` の失敗が「今の head の結果か rebase 前の古い run か」を必ず区別する
+- **逐次処理を厳守** — 1件の rebase/merge が他 PR の conflict / CI 状態を変える
 - 既存 clone を使った場合、終了時に元のブランチへ戻し、stash していれば pop する
 - 一時 clone した場合は scratchpad なので掃除不要
-- major バージョンアップの PR は特に慎重に。changelog を確認し、修正の確信が持てなければ無理に直さず issue 化する
+- major バージョンアップの PR は特に慎重に。自動 approve せず issue 化して人間に回す
