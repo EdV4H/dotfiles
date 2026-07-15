@@ -186,13 +186,13 @@ GitHub が CI 緑化時にマージする。もし修正が不十分で CI が�
 ### Step 2-issue: 修正不能ならスキップ（重複 issue を作らない）
 
 **まず既存の open issue を必ず確認する**。同じ PR に対して毎 run 新規 issue を量産しないため、
-issue 本文には機械可読マーカー `<!-- renovate-skill:pr=<NUMBER> -->` を必ず入れ、
-作成前にそのマーカーで既存 open issue を検索する:
+issue 本文には機械可読マーカー `<!-- renovate-skill-pr-<NUMBER> -->` を必ず入れ、
+作成前にそのマーカーで既存 open issue を探す。検索インデックスのラグ/クォート事故を避けるため、
+`--search` ではなく **open issue を列挙して body をローカル照合**する:
 
 ```bash
-EXISTING=$(gh issue list -R <owner/repo> --state open --limit 100 \
-  --search "renovate-skill:pr=<NUMBER> in:body" \
-  --json number --jq '.[0].number // empty')
+EXISTING=$(gh issue list -R <owner/repo> --state open --limit 200 --json number,body \
+  --jq '[.[] | select(.body | contains("renovate-skill-pr-<NUMBER>"))][0].number // empty')
 ```
 
 - **既存があれば新規作成しない**。その issue に今回の失敗内容をコメント追記するだけ:
@@ -206,7 +206,7 @@ EXISTING=$(gh issue list -R <owner/repo> --state open --limit 100 \
 gh issue create -R <owner/repo> \
   --title "Renovate: <PR_TITLE> のマージに失敗" \
   --body "$(cat <<'ISSUE_EOF'
-<!-- renovate-skill:pr=<NUMBER> -->
+<!-- renovate-skill-pr-<NUMBER> -->
 ## 概要
 
 Renovate PR #<NUMBER> の自動マージに失敗しました。
