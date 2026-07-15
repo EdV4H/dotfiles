@@ -183,12 +183,30 @@ GitHub が CI 緑化時にマージする。もし修正が不十分で CI が�
 「再修正ループ防止」ガードが検知し（HEAD が `[renovate-auto-fix]` かつ fail）、その時に 2-issue へ回す。
 このため 1 run 内では **1 PR につき修正は1回**まで。
 
-### Step 2-issue: 修正不能ならスキップ
+### Step 2-issue: 修正不能ならスキップ（重複 issue を作らない）
+
+**まず既存の open issue を必ず確認する**。同じ PR に対して毎 run 新規 issue を量産しないため、
+issue 本文には機械可読マーカー `<!-- renovate-skill:pr=<NUMBER> -->` を必ず入れ、
+作成前にそのマーカーで既存 open issue を検索する:
+
+```bash
+EXISTING=$(gh issue list -R <owner/repo> --state open --limit 100 \
+  --search "renovate-skill:pr=<NUMBER> in:body" \
+  --json number --jq '.[0].number // empty')
+```
+
+- **既存があれば新規作成しない**。その issue に今回の失敗内容をコメント追記するだけ:
+  ```bash
+  gh issue comment "$EXISTING" -R <owner/repo> --body "再試行も失敗（<日付/CI要点>）。<試した修正と結果>"
+  ```
+  報告は `Skipped: <TITLE> (#<NUMBER>) — 既存 Issue #$EXISTING に追記` とする。
+- **無ければ**新規作成（本文にマーカーを必ず含める）:
 
 ```bash
 gh issue create -R <owner/repo> \
   --title "Renovate: <PR_TITLE> のマージに失敗" \
   --body "$(cat <<'ISSUE_EOF'
+<!-- renovate-skill:pr=<NUMBER> -->
 ## 概要
 
 Renovate PR #<NUMBER> の自動マージに失敗しました。
