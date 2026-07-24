@@ -1,7 +1,7 @@
 ---
 name: yolo-review
 version: 1.0.0
-description: "Review a PR with 'yolo' label: read the diff, judge safety, and approve if acceptable."
+description: "Review a PR with 'yolo' label: check CI first (request-changes if failing), then read the diff, judge safety, and approve if acceptable."
 ---
 
 # yolo-review
@@ -28,6 +28,42 @@ gh pr view <number> -R <repo> --json title,body,labels,files,additions,deletions
 ```bash
 gh pr diff <number> -R <repo>
 ```
+
+### Step 2.5: CI（status checks）を確認 — 落ちていたら即 request-changes
+
+差分の内容を判定する前に、まず CI を確認する。**CI が失敗している PR は、内容が
+低リスクでも approve しない。**
+
+```bash
+gh pr checks <number> -R <repo> --json name,state,bucket
+```
+
+- `bucket` に `fail` / `cancel` があれば **CI 失敗**。以下を実行して終了（Step 3 以降に進まない）:
+
+  ```bash
+  # 二重送信ガード: 既に自分の CHANGES_REQUESTED があれば送らない
+  VIEWER=$(gh api user --jq '.login')
+  ALREADY=$(gh pr view <number> -R <repo> --json reviews \
+    --jq --arg u "$VIEWER" '[.reviews[]? | select(.author.login==$u and .state=="CHANGES_REQUESTED")] | length')
+  if [ "${ALREADY:-0}" -eq 0 ]; then
+    gh pr review <number> -R <repo> --request-changes --body "$(cat <<'EOF'
+⛔ **CI が失敗しています。** マージ前に修正が必要です。
+
+**失敗している check:**
+- <失敗した check 名を列挙>
+
+CI が green になったら再度レビューします。
+
+🤖 Reviewed by Claude Code (yolo-review)
+EOF
+)"
+  fi
+  # 再ポーリングでの無限ループを防ぐため yolo ラベルを外す
+  gh pr edit <number> -R <repo> --remove-label "yolo"
+  ```
+  報告は `Decision: Request changes (CI failing)` として終了。
+- `bucket` が全て `pass` / `skipping`、または `pending`（実行中）なら Step 3 へ進む
+  （pending の場合は「CI 実行中のため確定判定は保留」とし、approve せず様子見でもよい）。
 
 ### Step 3: 変更内容を判定
 
@@ -101,12 +137,13 @@ gh pr edit <number> -R <repo> --remove-label "yolo"
 
 - PR: <title> (#<number>)
 - Repo: <repo>
-- Decision: Approved / Needs human review
+- Decision: Approved / Request changes (CI failing) / Needs human review
 - Reason: <理由>
 ```
 
 ## Notes
 
+- **CI が失敗している PR は内容に関わらず approve しない**（Step 2.5 で request-changes）
 - approve は低リスクな変更のみ。判断に迷ったら approve しない
 - セキュリティに関わる変更は絶対に自動 approve しない
 - gh-review-watcher の on_poll Hook から自動呼び出しされる
