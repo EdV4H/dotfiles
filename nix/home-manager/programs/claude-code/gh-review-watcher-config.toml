@@ -35,3 +35,29 @@ command = "echo '[REMOVE] {repo}#{number}' >> /tmp/gh-review-watcher-hooks.log &
 # Enter押下時: ブラウザでPRを開く
 [on_select]
 command = "open {url}"
+
+# 手動アクション: TUI で `a` を押すとメニューが開き、選択中PRに対して実行できる。
+# (j/k で選択, Enter で実行, Esc で閉じる)
+[[actions]]
+name = "Rebase (update branch)"
+command = "gh pr update-branch {number} -R {repo} --rebase"
+
+[[actions]]
+name = "Approve"
+command = "gh pr review {number} -R {repo} --approve --body 'LGTM 👍 (manual)'"
+
+[[actions]]
+name = "Request changes"
+command = "gh pr review {number} -R {repo} --request-changes --body 'CI/変更点を確認してください'"
+
+[[actions]]
+name = "Open CI checks (web)"
+command = "gh pr checks {number} -R {repo} --web"
+
+[[actions]]
+name = "Re-review with Claude (new tab)"
+command = "zellij action new-tab --name 'Review: {repo}#{number}' --close-on-exit -- review-pr '{url}' '{number}' '{repo}'"
+
+[[actions]]
+name = "Copy URL"
+command = "printf %s {url} | pbcopy"
