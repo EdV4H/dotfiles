@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# List dev servers started by dev-up and whether each is still alive.
+# usage: dev-list
+set -uo pipefail
+
+statedir="${DEV_SERVERS_DIR:-/tmp/dev-servers}"
+shopt -s nullglob
+metas=("$statedir"/*.meta)
+if [ "${#metas[@]}" -eq 0 ]; then
+  echo "(no dev servers)"
+  exit 0
+fi
+
+metaval() { grep -m1 "^$1=" "$2" 2>/dev/null | cut -d= -f2-; }
+
+printf '%-16s %-7s %-6s %s\n' NAME KIND STATE CMD
+for m in "${metas[@]}"; do
+  name="$(basename "$m" .meta)"
+  kind="$(metaval kind "$m")"
+  cmd="$(metaval cmd "$m")"
+  pidfile="$statedir/$name.pid"
+  state="dead"
+  if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile" 2>/dev/null)" 2>/dev/null; then
+    state="alive"
+  fi
+  printf '%-16s %-7s %-6s %s\n' "$name" "${kind:-?}" "$state" "${cmd:-?}"
+done

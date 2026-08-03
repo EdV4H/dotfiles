@@ -181,6 +181,30 @@ in
     executable = true;
   };
 
+  # dev-server: run long-lived dev servers inside a zellij pane/tab so the
+  # Claude Code harness doesn't reap them with SIGTERM(143). See the
+  # dev-server skill. dev-serve-run is the internal in-pane wrapper.
+  home.file.".local/bin/dev-serve-run" = {
+    source = ./programs/claude-code/dev-server/dev-serve-run.sh;
+    executable = true;
+  };
+  home.file.".local/bin/dev-up" = {
+    source = ./programs/claude-code/dev-server/dev-up.sh;
+    executable = true;
+  };
+  home.file.".local/bin/dev-logs" = {
+    source = ./programs/claude-code/dev-server/dev-logs.sh;
+    executable = true;
+  };
+  home.file.".local/bin/dev-down" = {
+    source = ./programs/claude-code/dev-server/dev-down.sh;
+    executable = true;
+  };
+  home.file.".local/bin/dev-list" = {
+    source = ./programs/claude-code/dev-server/dev-list.sh;
+    executable = true;
+  };
+
   # PC migration helpers (旧 PC 側で export + list-repos、新 PC 側で restore)
   home.file.".local/bin/migration-export" = {
     source = ./programs/claude-code/migration/export-secrets.sh;
