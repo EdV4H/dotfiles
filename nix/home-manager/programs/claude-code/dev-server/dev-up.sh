@@ -17,7 +17,11 @@
 #   dev-up --tab api -- pnpm --filter api dev
 set -euo pipefail
 
-statedir="${DEV_SERVERS_DIR:-/tmp/dev-servers}"
+# /tmp/claude is a STABLE, sandbox-writable path shared across every context that
+# touches this state — Claude Code's Bash sandbox, your real shell, and the zellij
+# pane (dev-serve-run). $TMPDIR is NOT usable: it differs per context, so dev-up
+# and dev-down would compute different dirs and never see each other's state.
+statedir="${DEV_SERVERS_DIR:-/tmp/claude/dev-servers}"
 runner_bin="${DEV_SERVE_RUN:-$HOME/.local/bin/dev-serve-run}"
 place=stack
 
@@ -44,6 +48,24 @@ case "$name" in
 esac
 
 [ -z "${ZELLIJ:-}" ] && { echo "dev-up: must run inside a zellij session" >&2; exit 69; }
+
+# Preflight: confirm we can actually reach the zellij control socket. A sandboxed
+# shell (Claude Code's Bash) has its own $TMPDIR, so it looks for the socket in the
+# wrong place and can't connect — turning an otherwise cryptic "no active session"
+# into clear guidance. Monitoring/stop still work from the sandbox via shared state.
+if ! zellij action query-tab-names >/dev/null 2>&1; then
+  {
+    echo "dev-up: can't reach the zellij session from this shell."
+    echo "  zellij's socket/logs live under the server's \$TMPDIR; a sandboxed shell"
+    echo "  (e.g. Claude Code's Bash, \$TMPDIR=$TMPDIR) has a different one and can't"
+    echo "  connect. Run dev-up in your REAL shell / zellij pane, or export the zellij"
+    echo "  server's \$TMPDIR first."
+    echo "  Note: dev-logs / dev-list / dev-down still work here — they share state at"
+    echo "  $statedir, so a server you start in your real shell is visible from Claude."
+  } >&2
+  exit 69
+fi
+
 [ -x "$runner_bin" ] && : || runner_bin="dev-serve-run"  # fall back to PATH lookup
 
 mkdir -p "$statedir"

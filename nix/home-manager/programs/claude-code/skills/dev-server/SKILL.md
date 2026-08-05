@@ -79,8 +79,24 @@ dev-list                 # 起動済み dev サーバーと alive/dead を表示
 
 ## 挙動メモ
 
-- 出力は `/tmp/dev-servers/<name>.log` に tee される（ペイン表示は維持）。
-- state は `/tmp/dev-servers/`（再起動で消える＝サーバーもどうせ止まるので整合）。
+- 出力は `/tmp/claude/dev-servers/<name>.log` に tee される（ペイン表示は維持）。
+- state は `/tmp/claude/dev-servers/`（再起動で消える＝サーバーもどうせ止まるので整合）。
+  `/tmp/claude` は Claude Code の Bash サンドボックス・実シェル・zellij ペインの
+  **どこからでも書ける安定パス**なので採用している（`$TMPDIR` は文脈ごとに変わり
+  dev-up と dev-down で食い違うため不可）。`DEV_SERVERS_DIR` で上書き可。
 - 同名が既に alive なら `dev-up` は起動を拒否する。まず `dev-down <name>`。
 - 停止は必ず記録済み ID 経由。裸の `close-tab` / `close-pane` は使わない
   （CLAUDE.md の zellij close-tab 事故ルール準拠）。
+
+## サンドボックスからの実行について（Claude 向け）
+
+- `dev-logs` / `dev-list` / `dev-down`（stack/float/split）は state を読むだけ、または
+  プロセスグループを kill するだけなので **Claude の Bash サンドボックスから動く**
+  （停止は pgid kill → `--close-on-exit` でペイン自動消滅、zellij 操作は不要）。
+- `dev-up` は `zellij action new-pane` を叩く。zellij クライアントは制御ソケットと
+  ログを `$TMPDIR/zellij-<uid>/` に置くため、**サンドボックスの `$TMPDIR` が
+  zellij サーバー起動時の `$TMPDIR` とズレていると "no active session" や
+  logging の PermissionDenied で失敗する**ことがある。その場合は zellij サーバーと
+  同じ `$TMPDIR`（通常 `/var/folders/.../T`）を export してから叩くか、ユーザーの
+  実シェルで `dev-up` する。state パスは上記のとおり共有されるので、ユーザーが
+  起動したサーバーも Claude 側から `dev-logs` / `dev-down` で監視・停止できる。

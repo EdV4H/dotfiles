@@ -6,7 +6,7 @@
 #        dev-logs <name> -f        # follow (interactive only; blocks)
 set -uo pipefail
 
-statedir="${DEV_SERVERS_DIR:-/tmp/dev-servers}"
+statedir="${DEV_SERVERS_DIR:-/tmp/claude/dev-servers}"  # stable, sandbox-writable (see dev-up)
 name="${1:-}"
 [ -z "$name" ] && { echo "usage: dev-logs <name> [lines|-f]" >&2; exit 64; }
 

@@ -3,7 +3,7 @@
 # usage: dev-list
 set -uo pipefail
 
-statedir="${DEV_SERVERS_DIR:-/tmp/dev-servers}"
+statedir="${DEV_SERVERS_DIR:-/tmp/claude/dev-servers}"  # stable, sandbox-writable (see dev-up)
 shopt -s nullglob
 metas=("$statedir"/*.meta)
 if [ "${#metas[@]}" -eq 0 ]; then
