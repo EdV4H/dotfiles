@@ -84,6 +84,9 @@ dev-list                 # 起動済み dev サーバーと alive/dead を表示
   `/tmp/claude` は Claude Code の Bash サンドボックス・実シェル・zellij ペインの
   **どこからでも書ける安定パス**なので採用している（`$TMPDIR` は文脈ごとに変わり
   dev-up と dev-down で食い違うため不可）。`DEV_SERVERS_DIR` で上書き可。
+- pane はシェルを介さず起動されるため、`dev-up` を呼んだシェルの **PATH をそのまま
+  pane に転送**している（mise/Homebrew/corepack の `pnpm`/`node` 等がそのまま解決する）。
+  なので `dev-up` は **対象ツールが `pnpm` などを見つけられるシェル**で叩くこと。
 - 同名が既に alive なら `dev-up` は起動を拒否する。まず `dev-down <name>`。
 - 停止は必ず記録済み ID 経由。裸の `close-tab` / `close-pane` は使わない
   （CLAUDE.md の zellij close-tab 事故ルール準拠）。

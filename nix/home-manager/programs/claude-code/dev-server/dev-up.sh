@@ -84,7 +84,7 @@ cwd="$PWD"
 case "$place" in
   tab)
     tabid=$(zellij action new-tab --name "dev:$name" -- \
-      "$runner_bin" "$name" "$log" "$pidfile" "$cwd" -- "$@" | tr -dc '0-9')
+      "$runner_bin" "$name" "$log" "$pidfile" "$cwd" "$PATH" -- "$@" | tr -dc '0-9')
     zellij action go-to-previous-tab 2>/dev/null || true
     {
       echo "kind=tab"
@@ -101,7 +101,7 @@ case "$place" in
       stack) opt=(--stacked) ;;
     esac
     paneid=$(zellij action new-pane "${opt[@]}" --close-on-exit --name "dev:$name" -- \
-      "$runner_bin" "$name" "$log" "$pidfile" "$cwd" -- "$@")
+      "$runner_bin" "$name" "$log" "$pidfile" "$cwd" "$PATH" -- "$@")
     {
       echo "kind=$place"
       echo "paneid=$paneid"
