@@ -33,7 +33,7 @@ close-pane は起きない。
 ### 起動
 
 ```bash
-dev-up [--stack|--tab|--float|--split] <name> -- <cmd...>
+dev-up [--keep] [--stack|--tab|--float|--split] <name> -- <cmd...>
 ```
 
 - `<name>` は識別名（`[A-Za-z0-9._-]` のみ）。ログ・停止・一覧のキーになる。
@@ -42,7 +42,29 @@ dev-up [--stack|--tab|--float|--split] <name> -- <cmd...>
   - `--tab`   `dev:<name>` という新規タブ（起動後フォーカスは呼び出し元タブに戻る）
   - `--float` フローティングペイン
   - `--split` 現在ペインを分割
+- `--keep`: **自動再起動の対象**にする（下記「自動再起動」参照）。
 - **cwd は今いるディレクトリが使われる。** 別ディレクトリなら `cd` してから呼ぶ。
+
+### 自動再起動（--keep + dev-supervise）
+
+実際の dev サーバー（pnpm/vite/node）は、**起動してしばらくすると何かに SIGTERM(143)
+で殺される**ことがある（tab/stack いずれでも起こりうる。trivial な sleep ループは
+殺されないので、犯人は「サーバー」を狙っている）。対策として自動再起動を用意:
+
+```bash
+# 1) 見張り役を一度だけ起動（自分のタブで。trivial ループなので殺されない）
+dev-up --tab supervisor -- dev-supervise
+
+# 2) サーバーを --keep 付きで起動 → 死んでも watchdog が復活させる
+dev-up --keep --tab weboard -- pnpm dev:proxy --filter weboard
+```
+
+- `dev-supervise` は `keep=1` のサーバーを ~15秒毎に監視し、pgid が死んでいたら
+  `dev-up` で同じ cwd/コマンドで再起動する（元の argv を厳密に保存して復元）。
+- 短時間に連続で死ぬ場合はレート制限（120秒に5回超で 300秒バックオフ）で暴走を防ぐ。
+- `dev-down <name>` で keep マーカーごと消えるので、以後は再起動されない。
+- `dev-supervise` 自体は多重起動しない（ロックあり）。稀に見張り役が消えたら再度
+  `dev-up --tab supervisor -- dev-supervise` を叩く。
 
 例:
 ```bash

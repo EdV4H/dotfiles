@@ -204,6 +204,10 @@ in
     source = ./programs/claude-code/dev-server/dev-list.sh;
     executable = true;
   };
+  home.file.".local/bin/dev-supervise" = {
+    source = ./programs/claude-code/dev-server/dev-supervise.sh;
+    executable = true;
+  };
 
   # PC migration helpers (旧 PC 側で export + list-repos、新 PC 側で restore)
   home.file.".local/bin/migration-export" = {

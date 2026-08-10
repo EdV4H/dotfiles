@@ -55,5 +55,6 @@ case "$kind" in
     ;;
 esac
 
-rm -f "$meta" "$pidfile"
+# Removing the meta also clears keep=1, so dev-supervise stops restarting it.
+rm -f "$meta" "$pidfile" "$statedir/$name.argv"
 echo "dev:$name stopped"

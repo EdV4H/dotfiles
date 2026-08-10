@@ -6,15 +6,18 @@
 # A pane/tab command is a child of the zellij server instead, outside the
 # harness's process tree, so it keeps running until you `dev-down` it.
 #
-# usage: dev-up [--stack|--tab|--float|--split] <name> [--] <cmd> [args...]
+# usage: dev-up [--keep] [--stack|--tab|--float|--split] <name> [--] <cmd> [args...]
 #   --stack  (default) stacked pane in the current tab
 #   --tab    a new tab named  dev:<name>  (focus returns to the caller's tab)
 #   --float  a floating pane
 #   --split  split the current pane
+#   --keep   mark this server "supervised" so `dev-supervise` auto-restarts it if
+#            it dies. Real dev servers (pnpm/vite) get SIGTERM'd after a while by
+#            something that targets servers specifically; --keep makes them self-heal.
 #
 # examples:
 #   dev-up weboard -- pnpm dev:proxy --filter weboard
-#   dev-up --tab api -- pnpm --filter api dev
+#   dev-up --keep --tab api -- pnpm --filter api dev
 set -euo pipefail
 
 # /tmp/claude is a STABLE, sandbox-writable path shared across every context that
@@ -24,6 +27,7 @@ set -euo pipefail
 statedir="${DEV_SERVERS_DIR:-/tmp/claude/dev-servers}"
 runner_bin="${DEV_SERVE_RUN:-$HOME/.local/bin/dev-serve-run}"
 place=stack
+keep=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -31,6 +35,7 @@ while [ "$#" -gt 0 ]; do
     --tab)   place=tab;   shift ;;
     --float) place=float; shift ;;
     --split) place=split; shift ;;
+    --keep)  keep=1;      shift ;;
     --) shift; break ;;
     --*) echo "dev-up: unknown flag $1" >&2; exit 64 ;;
     *) break ;;
@@ -78,8 +83,30 @@ if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile" 2>/dev/null)" 2>/dev/null; the
   exit 1
 fi
 
+# Restart hygiene: if a previous same-named server died and left its surface
+# behind, close that surface BY ID first (never a bare close-tab/close-pane) so a
+# restart — e.g. by dev-supervise — doesn't pile up dead tabs/panes.
+if [ -f "$meta" ]; then
+  old_kind=$(grep -m1 '^kind=' "$meta" 2>/dev/null | cut -d= -f2-)
+  old_tabid=$(grep -m1 '^tabid=' "$meta" 2>/dev/null | cut -d= -f2-)
+  if [ "$old_kind" = tab ] && [ -n "$old_tabid" ]; then
+    zellij action close-tab-by-id "$old_tabid" 2>/dev/null || true
+  elif [ "$old_kind" != tab ]; then
+    # pane modes ran with --close-on-exit, so a dead pane is normally already gone.
+    # Only if an EXACT live pane named dev:<name> lingers, focus it by id and close.
+    pid_live=$(zellij action list-panes 2>/dev/null | awk -v n="dev:$name" '$3==n{print $1; exit}')
+    if [ -n "$pid_live" ]; then
+      zellij action focus-pane-id "$pid_live" 2>/dev/null || true
+      zellij action close-pane 2>/dev/null || true
+    fi
+  fi
+fi
+
 cwd="$PWD"
 : > "$log"
+
+# Record argv (NUL-delimited) so dev-supervise can respawn with the exact command.
+printf '%s\0' "$@" > "$statedir/$name.argv"
 
 case "$place" in
   tab)
@@ -90,6 +117,7 @@ case "$place" in
       echo "kind=tab"
       echo "tabid=$tabid"
       echo "cwd=$cwd"
+      echo "keep=$keep"
       printf 'cmd=%s\n' "$*"
     } > "$meta"
     ;;
@@ -106,11 +134,14 @@ case "$place" in
       echo "kind=$place"
       echo "paneid=$paneid"
       echo "cwd=$cwd"
+      echo "keep=$keep"
       printf 'cmd=%s\n' "$*"
     } > "$meta"
     ;;
 esac
 
-echo "dev:$name up ($place)  log: $log"
+echo "dev:$name up ($place$([ "$keep" = 1 ] && echo ', supervised'))  log: $log"
 echo "  dev-logs $name    # tail output (use this to check it started / see errors)"
-echo "  dev-down $name    # stop it"
+echo "  dev-down $name    # stop it$([ "$keep" = 1 ] && echo ' (and stop supervising)')"
+[ "$keep" = 1 ] && echo "  (run 'dev-supervise' once — in a tab — so a watchdog restarts it if it dies)"
+true
