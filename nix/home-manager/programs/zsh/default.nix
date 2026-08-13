@@ -96,9 +96,14 @@
       eval "$(/opt/homebrew/bin/goenv init -)"
     fi
 
-    # Auto-start Zellij
-    if [[ -z "$ZELLIJ" && -z "$VSCODE_INJECTION" ]]; then
-      eval "$(zellij setup --generate-auto-start zsh)"
+    # Auto-start herdr
+    #
+    # $HERDR_ENV は herdr が管理するペインの中でだけ "1" になるので、 これで
+    # ネスト起動を防ぐ (herdr 側も experimental.allow_nested=false で二重に守る)。
+    # exec せず条件分岐で呼ぶのは、 herdr から detach (prefix+q) したときに
+    # 素の zsh に戻れるようにするため。
+    if [[ -z "$HERDR_ENV" && -z "$VSCODE_INJECTION" && -o interactive ]]; then
+      herdr
     fi
 
     # Enable vi mode

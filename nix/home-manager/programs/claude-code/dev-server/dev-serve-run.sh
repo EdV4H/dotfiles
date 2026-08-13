@@ -1,31 +1,53 @@
 #!/usr/bin/env bash
-# Internal wrapper launched *inside* a zellij pane/tab by `dev-up`.
+# Internal wrapper launched *inside* a herdr pane/tab by `dev-up`.
 #
 # Why it exists:
 #  - It records this shell's PID as the process-group leader so `dev-down` can
 #    stop the whole tree (pnpm -> node -> vite ...) with `kill -TERM -<pgid>`.
 #    Job control is off in scripts, so every child stays in this pgid == $$.
 #  - It tees output to a logfile so `dev-logs` (and Claude, headless) can read
-#    the server's output without stealing the zellij pane.
+#    the server's output without stealing the herdr pane.
 #
-# argv: <name> <logfile> <pidfile> <cwd> <caller-PATH> -- <cmd> [args...]
+# argv: <name> [statedir]
 #
-# The logfile/pidfile paths AND the caller's PATH are passed explicitly (not
-# derived from env) because this runs *inside a zellij pane* and does NOT inherit
-# the caller's environment — it inherits the zellij server's. Without the
-# forwarded PATH, tools the user gets from mise / Homebrew / corepack (pnpm, node,
-# …) are missing and the command dies with "command not found" (exit 127).
+# Everything else — the command, its cwd, and the caller's PATH — is read from
+# the state dir, NOT from the command line.
+#
+# Why: herdr has no `new-pane -- cmd`; `dev-up` starts this by TYPING a command
+# into the pane's shell (`herdr pane run`). Long lines get truncated on the way
+# in — a full forwarded $PATH pushed the line past ~1KB and it arrived cut in
+# half, so nothing ran and the log stayed empty. Keeping the typed line down to
+# `dev-serve-run <name> <statedir>` makes that impossible regardless of how long
+# the command or the caller's PATH is.
+#
+# The caller's PATH is still forwarded (via the spec file) because this runs in a
+# shell spawned by the herdr server, not by the caller. herdr does start panes as
+# login shells (so mise / Homebrew / corepack tools are normally on PATH anyway),
+# but that depends on `terminal.shell_mode`, and under zellij a missing PATH meant
+# "command not found" (exit 127). Forwarding keeps this independent of the setting.
 set -u
 
 name="${1:?dev-serve-run: missing name}"
-log="${2:?dev-serve-run: missing logfile}"
-pidfile="${3:?dev-serve-run: missing pidfile}"
-cwd="${4:?dev-serve-run: missing cwd}"
-caller_path="${5-}"
-shift 5
-[ "${1:-}" = "--" ] && shift
+statedir="${2:-${DEV_SERVERS_DIR:-/tmp/claude/dev-servers}}"
+
+log="$statedir/$name.log"
+pidfile="$statedir/$name.pid"
+specfile="$statedir/$name.spec"
+argvfile="$statedir/$name.argv"
+
+[ -f "$specfile" ] || { echo "dev-serve-run: missing spec $specfile" >&2; exit 66; }
+[ -f "$argvfile" ] || { echo "dev-serve-run: missing argv $argvfile" >&2; exit 66; }
+
+specval() { grep -m1 "^$1=" "$specfile" 2>/dev/null | cut -d= -f2-; }
+cwd=$(specval cwd)
+caller_path=$(specval path)
+[ -n "$cwd" ] || { echo "dev-serve-run: no cwd in $specfile" >&2; exit 66; }
+
+# NUL-delimited so arguments with spaces/newlines survive the round trip.
+set --
+while IFS= read -r -d '' a; do set -- "$@" "$a"; done < "$argvfile"
 if [ "$#" -eq 0 ]; then
-  echo "dev-serve-run: no command given" >&2
+  echo "dev-serve-run: no command in $argvfile" >&2
   exit 64
 fi
 
@@ -50,9 +72,40 @@ cd "$cwd" || { echo "dev-serve-run: cannot cd to $cwd" | tee -a "$log" >&2; exit
 } | tee -a "$log"
 
 # Mirror all further output to the logfile while keeping it visible in the pane.
-exec > >(tee -a "$log") 2>&1
+# `trap '' TERM` before exec'ing tee makes tee inherit SIG_IGN, so the group kill
+# below does not take the log pipe out from under a server that is still logging
+# its shutdown — tee exits on its own once stdin closes.
+exec > >(trap '' TERM; tee -a "$log") 2>&1
 
-"$@"
-status=$?
+# Run the command in the BACKGROUND and wait for it, rather than in the foreground.
+#
+# Why: `dev-down` stops a server with `kill -TERM -<pgid>`, which hits this shell
+# too. Running the command in the foreground, bash dies on that TERM immediately,
+# and under zellij the pane then tore down and took the still-shutting-down server
+# with it — measured gone within 200ms, long before any SIGKILL, so graceful
+# teardown (flushing logs, closing pools, writing a shutdown record) never got to
+# finish. herdr panes outlive their command, so that particular teardown race is
+# gone, but the wrapper still has to survive the group kill to keep waiting on the
+# child (and to report its real exit status).
+#
+# So this shell survives the signal and waits for the child instead. It does NOT
+# forward another TERM: the child already received its own from the group kill,
+# and a server with a one-shot handler (Node's `process.once("SIGTERM", …)`) would
+# die on the second signal — exactly the failure being fixed here.
+#
+# `<&0` keeps the pane's tty as the child's stdin. Without an explicit redirection
+# bash gives a background job /dev/null, which would break interactive dev-server
+# keys (Vite's `r` / `h`).
+"$@" <&0 &
+child=$!
+# Set AFTER the fork, so the child keeps the default signal dispositions. `:` and
+# not '' — an ignored disposition set before the fork would be inherited, making
+# the server itself deaf to SIGTERM.
+trap ':' TERM INT HUP
+status=0
+while kill -0 "$child" 2>/dev/null; do
+  wait "$child"
+  status=$?
+done
 echo "■ dev:$name exited (status=$status) $(date '+%Y-%m-%d %H:%M:%S')"
 exit "$status"

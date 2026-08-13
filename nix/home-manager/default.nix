@@ -54,7 +54,7 @@ in
       bruno
       mysql84
       lazysql
-      zellij
+      herdr
       inputs.gws.packages.${pkgs.system}.default
       inputs.gh-review-watcher.packages.${pkgs.system}.default
       inputs.port-patrol.packages.${pkgs.system}.default
@@ -123,21 +123,11 @@ in
     executable = true;
   };
 
-  home.file.".claude/hooks/zellij-tab-thinking.sh" = {
-    source = ./programs/claude-code/zellij-tab-thinking.sh;
-    executable = true;
-  };
-
-  home.file.".claude/hooks/zellij-tab-done.sh" = {
-    source = ./programs/claude-code/zellij-tab-done.sh;
-    executable = true;
-  };
-
-  # Claude Code zellij wrapper (claude-zellij command)
-  home.file.".local/bin/claude-zellij" = {
-    source = ./programs/claude-code/claude-zellij.sh;
-    executable = true;
-  };
+  # NOTE: Claude Code の作業状態 (working / idle / blocked) は herdr が
+  # ネイティブに持つ。 `herdr integration install claude` を 1 度実行すると
+  # ~/.claude/settings.json に hook が入り、 サイドバーに状態が出る。
+  # 旧 zellij 構成の claude-zellij / zellij-tab-thinking.sh / zellij-tab-done.sh と
+  # /tmp/zellij-tab-* マーカーはこれで不要になったため削除した。
 
   # Daily report generator script
   home.file.".local/bin/daily-report" = {
@@ -175,13 +165,19 @@ in
     executable = true;
   };
 
-  # Close "Conflict: <repo>#<num>" tab safely (used by pr-conflict-resolve handoff prompt)
+  # Open a "Review: <repo>#<num>" tab running review-pr (triggered by gh-review-watcher)
+  home.file.".local/bin/open-review-tab" = {
+    source = ./programs/claude-code/open-review-tab.sh;
+    executable = true;
+  };
+
+  # Close "Conflict: <repo>#<num>" tab (used by pr-conflict-resolve handoff prompt)
   home.file.".local/bin/close-conflict-tab" = {
     source = ./programs/claude-code/close-conflict-tab.sh;
     executable = true;
   };
 
-  # dev-server: run long-lived dev servers inside a zellij pane/tab so the
+  # dev-server: run long-lived dev servers inside a herdr pane/tab so the
   # Claude Code harness doesn't reap them with SIGTERM(143). See the
   # dev-server skill. dev-serve-run is the internal in-pane wrapper.
   home.file.".local/bin/dev-serve-run" = {
@@ -229,10 +225,22 @@ in
     recursive = true;
   };
 
-  # Zellij layouts
-  xdg.configFile."zellij/layouts" = {
-    source = ./programs/zellij/layouts;
-    recursive = true;
+  # herdr 設定。 レイアウトは herdr に宣言ファイル (旧 zellij の KDL 相当) が無く、
+  # 永続セッションが構成を保持する設計なので、 作り直し用に bootstrap スクリプトを置く。
+  xdg.configFile."herdr/config.toml" = {
+    source = ./programs/herdr/config.toml;
+  };
+
+  # herdr のタブを label で引くヘルパー (close-*-tab / review-pr / pr-conflict-resolve が使う)
+  home.file.".local/bin/herdr-tab-id" = {
+    source = ./programs/herdr/herdr-tab-id.sh;
+    executable = true;
+  };
+
+  # herdr-bootstrap <work|cockpit>: 旧 zellij KDL レイアウトの作り直し用
+  home.file.".local/bin/herdr-bootstrap" = {
+    source = ./programs/herdr/bootstrap.sh;
+    executable = true;
   };
 
   # gh-review-watcher の hook 設定

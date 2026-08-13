@@ -3,11 +3,11 @@
 #
 # Why this works: real dev servers (pnpm/vite/node) get SIGTERM'd after a while by
 # something that targets *servers* specifically — trivial processes are spared
-# (verified: bare sleep-loops in the same zellij survive 70+ min while pnpm dev
-# dies with 143). This watchdog loop is itself trivial, so it survives, and it
+# (verified: bare sleep-loops in the same multiplexer survive 70+ min while pnpm
+# dev dies with 143). This watchdog loop is itself trivial, so it survives, and it
 # re-launches dead supervised servers via dev-up.
 #
-# Run it ONCE inside your zellij session, in its own tab:
+# Run it ONCE inside your herdr session, in its own tab:
 #     dev-up --tab supervisor -- dev-supervise
 # Then start servers with --keep:
 #     dev-up --keep --tab weboard -- pnpm dev:proxy --filter weboard
@@ -34,7 +34,7 @@ fi
 echo "$$" > "$lock"
 trap 'rm -f "$lock"' EXIT
 
-[ -z "${ZELLIJ:-}" ] && log "WARNING: not inside a zellij session — dev-up restarts will fail"
+herdr tab list >/dev/null 2>&1 || log "WARNING: no reachable herdr server — dev-up restarts will fail"
 
 log "dev-supervise start (interval=${interval}s, dir=$statedir)"
 while true; do
@@ -70,6 +70,10 @@ while true; do
     fi
 
     kind=$(metaval kind "$m"); cwd=$(metaval cwd "$m")
+    # --split can only be respawned from inside the original pane, and stale
+    # zellij-era metas may still say stack/float. Anything that isn't a plain
+    # tab restarts as a tab — the watchdog usually runs in its own tab anyway.
+    [ "$kind" = tab ] || kind=tab
     argvf="$statedir/$name.argv"
     [ -e "$argvf" ] || { log "$name: no argv file, cannot restart"; continue; }
     argv=(); while IFS= read -r -d '' a; do argv+=("$a"); done < "$argvf"

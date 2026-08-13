@@ -52,7 +52,7 @@ REVIEW_RESULT=$(claude --dangerously-skip-permissions -p "/review ${URL}" 2>&1)
 # Step 2: $REVIEW_RESULT を固定テンプレートに再整形 (タブで一貫した5セクション構造で見るため)
 REFORMAT_PROMPT="以下は PR #${NUMBER} (${REPO}) に対するコードレビュー結果です。
 これを下記の固定テンプレートに再整形してください。
-ターミナル (zellij タブ) で人間が読むことを想定しており、emoji と区切り罫線で
+ターミナル (herdr タブ) で人間が読むことを想定しており、emoji と区切り罫線で
 セクションを視認しやすくします。 内容は元レビューにあるものだけを使い、勝手に増やさない。
 
 == 出力テンプレート (このまま、コードフェンスで包まない) ==
@@ -161,7 +161,8 @@ EOF
 fi
 
 # 分析完了後、このレビュータブにフォーカスを移動
-zellij action go-to-tab-name "Review: ${REPO}#${NUMBER}" 2>/dev/null || true
+REVIEW_TAB_ID=$(herdr-tab-id "Review: ${REPO}#${NUMBER}" 2>/dev/null || true)
+[ -n "$REVIEW_TAB_ID" ] && herdr tab focus "$REVIEW_TAB_ID" >/dev/null 2>&1 || true
 
 # Step 2: 選択肢を提示
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
