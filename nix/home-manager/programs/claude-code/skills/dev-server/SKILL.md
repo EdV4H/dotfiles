@@ -1,13 +1,13 @@
 ---
 name: dev-server
 version: 1.0.0
-description: "Start / inspect / stop long-running dev servers (Vite, pnpm dev, Next, etc.) inside a zellij pane or tab so they survive. Use this INSTEAD of `!`-backgrounding or run_in_background for any process that must keep running — the Claude Code harness reaps those with SIGTERM (exit 143) after ~20min. Commands: dev-up / dev-logs / dev-down / dev-list."
+description: "Start / inspect / stop long-running dev servers (Vite, pnpm dev, Next, etc.) inside a herdr pane or tab so they survive. Use this INSTEAD of `!`-backgrounding or run_in_background for any process that must keep running — the Claude Code harness reaps those with SIGTERM (exit 143) after ~20min. Commands: dev-up / dev-logs / dev-down / dev-list."
 ---
 
 # dev-server
 
-長時間走らせる開発サーバー（`pnpm dev` / Vite / Next / watch 系）を **zellij の
-ペイン・タブの中**で起動する。これらは zellij server の子プロセスになり、Claude
+長時間走らせる開発サーバー（`pnpm dev` / Vite / Next / watch 系）を **herdr の
+ペイン・タブの中**で起動する。これらは herdr server の子プロセスになり、Claude
 Code ハーネスのプロセスツリーから外れるので **SIGTERM(143) で回収されない**。
 
 ## いつ使うか（重要）
@@ -26,29 +26,29 @@ Code ハーネスのプロセスツリーから外れるので **SIGTERM(143) �
 
 ## コマンド
 
-前提: **zellij セッションの中**で動くこと（`$ZELLIJ` が必要）。ペイン ID は zellij
-が管理し、停止はプロセスグループごと kill するので focus 奪取や事故的な
-close-pane は起きない。
+前提: **herdr サーバーが動いていること**。socket は `~/.config/herdr/` 配下の固定パス
+なので、Claude の Bash サンドボックスからでも同じサーバーに届く（`$TMPDIR` に依存しない）。
+起動・停止はどちらもペイン/タブ ID 指定なので focus 奪取や誤爆は起きない。
 
 ### 起動
 
 ```bash
-dev-up [--keep] [--stack|--tab|--float|--split] <name> -- <cmd...>
+dev-up [--keep] [--tab|--split] <name> -- <cmd...>
 ```
 
 - `<name>` は識別名（`[A-Za-z0-9._-]` のみ）。ログ・停止・一覧のキーになる。
-- 配置（省略時 `--stack`）:
-  - `--stack` 現在タブにスタックペインで追加（デフォルト）
-  - `--tab`   `dev:<name>` という新規タブ（起動後フォーカスは呼び出し元タブに戻る）
-  - `--float` フローティングペイン
-  - `--split` 現在ペインを分割
+- 配置（省略時 `--tab`）:
+  - `--tab`   `dev:<name>` という新規タブ。`--no-focus` で作るのでフォーカスは動かない（デフォルト）
+  - `--split` 今いるペインを下に分割（`$HERDR_PANE_ID` が要るのでペインの中から叩くこと）
+  - herdr にスタックペイン／フローティングペインは無い。旧 `--stack` / `--float` は
+    エラーになるので `--tab` か `--split` に読み替える。
 - `--keep`: **自動再起動の対象**にする（下記「自動再起動」参照）。
 - **cwd は今いるディレクトリが使われる。** 別ディレクトリなら `cd` してから呼ぶ。
 
 ### 自動再起動（--keep + dev-supervise）
 
 実際の dev サーバー（pnpm/vite/node）は、**起動してしばらくすると何かに SIGTERM(143)
-で殺される**ことがある（tab/stack いずれでも起こりうる。trivial な sleep ループは
+で殺される**ことがある（tab/split いずれでも起こりうる。trivial な sleep ループは
 殺されないので、犯人は「サーバー」を狙っている）。対策として自動再起動を用意:
 
 ```bash
@@ -90,8 +90,21 @@ dev-logs <name> 120      # 末尾120行
 dev-down <name>
 ```
 
-プロセスグループごと SIGTERM → 数百 ms 待って残っていれば SIGKILL → ペイン/タブを
-ID 指定で除去する。
+プロセスグループごと SIGTERM → **グループ内のプロセスが消えるまで最大8秒待って**、
+残っていれば SIGKILL → ペイン/タブを ID 指定で除去する。猶予は `DEV_DOWN_GRACE`（秒）で変えられる。
+
+> [!IMPORTANT]
+> **graceful shutdown は途中で切られない。** 以前は `dev-down` から**0.2秒以内**にサーバーが
+> 消えていた（SIGKILL より前に、である）。グループへの TERM でラッパー（`dev-serve-run` の
+> bash）が即死し、それにつられて zellij がペインごと畳んで、後片付け中のサーバーを
+> 巻き込んでいた。ログの flush・プールの close・停止イベントの記録が残らない。
+> （herdr のペインはコマンドが終わっても畳まれないので、この巻き添えは構造的に消えた。
+> ただしラッパーがグループ kill を生き延びる必要は変わらない。）
+>
+> いまはラッパーがシグナルを受けても死なず、子の終了を待つ。`dev-down` 側もリーダーの
+> pid ではなく**グループ内のプロセス**が消えるまで待つ。TERM は二重に送らない——
+> 一度しか受けないハンドラ（Node の `process.once("SIGTERM", …)`）を持つサーバーが
+> 2発目で即死するため。
 
 ### 一覧
 
@@ -103,25 +116,27 @@ dev-list                 # 起動済み dev サーバーと alive/dead を表示
 
 - 出力は `/tmp/claude/dev-servers/<name>.log` に tee される（ペイン表示は維持）。
 - state は `/tmp/claude/dev-servers/`（再起動で消える＝サーバーもどうせ止まるので整合）。
-  `/tmp/claude` は Claude Code の Bash サンドボックス・実シェル・zellij ペインの
+  `/tmp/claude` は Claude Code の Bash サンドボックス・実シェル・herdr ペインの
   **どこからでも書ける安定パス**なので採用している（`$TMPDIR` は文脈ごとに変わり
   dev-up と dev-down で食い違うため不可）。`DEV_SERVERS_DIR` で上書き可。
-- pane はシェルを介さず起動されるため、`dev-up` を呼んだシェルの **PATH をそのまま
-  pane に転送**している（mise/Homebrew/corepack の `pnpm`/`node` 等がそのまま解決する）。
+- herdr のペインは login shell で起動するので PATH は基本そのまま通るが、`dev-up` は
+  念のため呼び出し元シェルの **PATH を明示的に転送**している（mise/Homebrew/corepack の
+  `pnpm`/`node` 等の解決を `terminal.shell_mode` 設定に依存させないため）。
   なので `dev-up` は **対象ツールが `pnpm` などを見つけられるシェル**で叩くこと。
+- `pane run` はペインのシェルに**コマンドを打ち込む**方式（zellij の `new-pane -- cmd` の
+  ような argv 直渡しが無い）。`dev-up` 側で `printf %q` 済みなので利用者は意識しなくてよい。
 - 同名が既に alive なら `dev-up` は起動を拒否する。まず `dev-down <name>`。
-- 停止は必ず記録済み ID 経由。裸の `close-tab` / `close-pane` は使わない
-  （CLAUDE.md の zellij close-tab 事故ルール準拠）。
+- **herdr のタブ/ペインはコマンドが終了しても消えない**（`--close-on-exit` 相当が無い）。
+  後片付けは `dev-down` が記録済み ID で行うので、放置せず `dev-down` すること。
 
 ## サンドボックスからの実行について（Claude 向け）
 
-- `dev-logs` / `dev-list` / `dev-down`（stack/float/split）は state を読むだけ、または
-  プロセスグループを kill するだけなので **Claude の Bash サンドボックスから動く**
-  （停止は pgid kill → `--close-on-exit` でペイン自動消滅、zellij 操作は不要）。
-- `dev-up` は `zellij action new-pane` を叩く。zellij クライアントは制御ソケットと
-  ログを `$TMPDIR/zellij-<uid>/` に置くため、**サンドボックスの `$TMPDIR` が
-  zellij サーバー起動時の `$TMPDIR` とズレていると "no active session" や
-  logging の PermissionDenied で失敗する**ことがある。その場合は zellij サーバーと
-  同じ `$TMPDIR`（通常 `/var/folders/.../T`）を export してから叩くか、ユーザーの
-  実シェルで `dev-up` する。state パスは上記のとおり共有されるので、ユーザーが
-  起動したサーバーも Claude 側から `dev-logs` / `dev-down` で監視・停止できる。
+- **`dev-up` / `dev-logs` / `dev-list` / `dev-down` すべてサンドボックスから動く。**
+  herdr の socket は `~/.config/herdr/[sessions/<name>/]herdr.sock` という固定パスで、
+  ペインには `$HERDR_SOCKET_PATH` も渡るため、`$TMPDIR` がどうであれ同じサーバーに届く。
+  zellij 時代に必要だった「サーバーと同じ `$TMPDIR` を export する」回避は不要になった。
+- state パスは共有されているので、ユーザーが実シェルで起動したサーバーも Claude 側から
+  `dev-logs` / `dev-down` で監視・停止できる（逆も同じ）。
+- `--split` だけは `$HERDR_PANE_ID` が要る = herdr ペインの中から叩く必要がある。
+  サンドボックスも claude を動かしているペインの環境を継いでいるので通常は満たされるが、
+  満たされない場合は `--tab` を使う。

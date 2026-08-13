@@ -79,7 +79,7 @@ nix build .#darwinConfigurations.ATR-LAP-OSX-YUSUKE-MARUYAMA.system
 
 ### Installed Development Tools
 - Version control: git, gh, lazygit
-- Terminal: wezterm, tmux
+- Terminal: wezterm, herdr (terminal multiplexer)
 - Editor: neovim
 - Search: ripgrep
 - Utilities: curl, jq, docker
@@ -134,31 +134,32 @@ When compacting, preserve the following:
 - WezTerm is installed via Homebrew's nightly cask, not Nix
 - The configuration includes both Nix packages and Homebrew casks for different types of applications
 
-### Zellij タブ閉じる時の注意
+### herdr (ターミナルマルチプレクサ)
 
-**重要**: zellij タブを閉じる時は **絶対に `zellij action close-tab` を呼ばない**。`close-tab` は「今フォーカスのあるタブ」を閉じるコマンドであり、ユーザーが見ているタブを巻き込んで破壊する事故が頻発している。必ず `close-tab-by-id` を ID 指定で使うこと。
+zellij から移行済み。 スクリプトから触るときの要点だけ:
 
-事故パターン: `go-to-tab-name "<name>"` は対象タブが存在しないと**フォーカスを移動せず黙って失敗** (exit code 2)。続けて `close-tab` を実行すると**現在フォーカスのタブが閉じてしまう**。 `2>/dev/null` でエラーを潰していると気付かず、別のタブを破壊する。
-
-```bash
-# ❌ 絶対 NG: tab name が存在しないと、フォーカスのある別のタブを閉じてしまう
-zellij action go-to-tab-name "$TAB_NAME" 2>/dev/null
-zellij action close-tab
-
-# ❌ 絶対 NG: フォーカスのあるタブをそのまま閉じる (今いるタブが消える)
-zellij action close-tab
-
-# ✅ 安全: ID で明示的に指定 (なければ noop)
-TAB_ID=$(zellij action list-tabs --json | jq -r --arg n "$TAB_NAME" '.[] | select(.name == $n) | .tab_id')
-[ -n "$TAB_ID" ] && zellij action close-tab-by-id "$TAB_ID"
-```
+- **タブ/ペインの操作は必ず ID 指定。** `herdr tab close <tab_id>` / `herdr pane close <pane_id>` は
+  ID 必須なので、 zellij 時代の「裸の `close-tab` がフォーカス中のタブを巻き込む」事故は起きない。
+  自分のタブ/ペインは `$HERDR_TAB_ID` / `$HERDR_PANE_ID` で分かる。
+- **CLI の出力は socket API のエンベロープ付き JSON。** 配列は `.result.tabs[]` / `.result.panes[]` に
+  入っている (`.[]` ではない)。 エラー時は `{"error":{...}}` を出して exit 1。
+- **`tab create` は新タブの root pane まで返す** (`.result.root_pane.pane_id`)。 pane を引き直さなくてよい。
+- **コマンド付きでタブ/ペインを生やす形は無い。** `tab create` → `pane run <pane_id> "<cmd>"` の 2 段。
+  `pane run` はペインのシェルに打ち込んで Enter まで送るので、 引数は `printf %q` でクォートする。
+  Enter を送りたくない (旧 `start_suspended` 相当) なら `pane send-text`。
+- **タブ/ペインはコマンドが終了しても消えない** (`--close-on-exit` 相当が無い)。 後片付けは明示的に。
+- socket は `~/.config/herdr/[sessions/<name>/]herdr.sock` の固定パス。 `$TMPDIR` に依存しないので
+  launchd からも Claude Code の Bash サンドボックスからも同じサーバーに届く。
 
 専用ヘルパー (使えるなら必ずこっちを優先):
 
+- `herdr-tab-id <label>` → label 一致のタブ ID を引く (無ければ空 + exit 1)
 - `close-conflict-tab <repo> <num>` → `Conflict: <repo>#<num>` タブを閉じる (pr-conflict-check 用)
 - `close-merged-review-tab <num> <repo>` → `Review: <repo>#<num>` タブを閉じる (gh-review-watcher 用)
+- `open-review-tab <url> <num> <repo>` → `Review: <repo>#<num>` タブを開いて review-pr を走らせる
+- `herdr-bootstrap <work|cockpit>` → 旧 zellij KDL レイアウト相当の workspace を組み直す
 
-参考実装: `nix/home-manager/programs/claude-code/close-conflict-tab.sh`, `close-merged-review-tab.sh`
+参考実装: `nix/home-manager/programs/herdr/`, `nix/home-manager/programs/claude-code/close-conflict-tab.sh`
 
 ## PC 移行手順
 
@@ -233,6 +234,16 @@ if [ -d ~/Projects/poke-mate ]; then
   ln -sfn ~/Projects/poke-mate/skills/build-party-with-me ~/.claude/skills/poke-mate-build-party-with-me
   ln -sfn ~/Projects/poke-mate/skills/review-party ~/.claude/skills/poke-mate-review-party
 fi
+
+# 8. herdr: Claude Code 連携を入れる (~/.claude/settings.json に hook を書き込む。
+#    nix 管理外なので新 PC で 1 回だけ手動実行が要る)
+herdr integration install claude
+herdr integration status
+
+# 9. herdr のワークスペースを組み直す (旧 zellij の work.kdl / cockpit.kdl 相当)
+#    herdr を起動してから、 別ペイン or 起動後のシェルで:
+herdr-bootstrap work
+# herdr-bootstrap cockpit   # 必要なら
 ```
 
 ### 引き継がないもの
