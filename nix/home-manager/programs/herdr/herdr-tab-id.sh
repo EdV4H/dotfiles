@@ -21,8 +21,18 @@ if [ -z "$LABEL" ]; then
   exit 2
 fi
 
-TAB_ID=$(herdr tab list 2>/dev/null \
-  | jq -r --arg n "$LABEL" 'first(.result.tabs[]? | select(.label == $n) | .tab_id) // empty' 2>/dev/null)
+_find() { jq -r --arg n "$LABEL" 'first(.result.tabs[]? | select(.label == $n) | .tab_id) // empty' 2>/dev/null; }
+
+# Try the default listing first (one call, covers the common case), then scan each
+# workspace — a tab may live in a dedicated space (dev-up's "dev-servers", review
+# tabs' "reviews") that the default listing does not include.
+TAB_ID=$(herdr tab list 2>/dev/null | _find)
+if [ -z "$TAB_ID" ]; then
+  for ws in $(herdr workspace list 2>/dev/null | jq -r '.result.workspaces[]?.workspace_id' 2>/dev/null); do
+    TAB_ID=$(herdr tab list --workspace "$ws" 2>/dev/null | _find)
+    [ -n "$TAB_ID" ] && break
+  done
+fi
 
 [ -z "$TAB_ID" ] && exit 1
 echo "$TAB_ID"

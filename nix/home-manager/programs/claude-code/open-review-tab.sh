@@ -4,11 +4,13 @@ set -euo pipefail
 # gh-review-watcher から呼ばれる: "Review: <repo>#<num>" タブを開いて review-pr を走らせる。
 # usage: open-review-tab <url> <number> <repo>
 #
-# 旧 zellij 版は `new-tab --close-on-exit -- review-pr ...` の 1 行だったが、 herdr には
-#   - コマンドを直接生やす new-tab 相当が無い (tab create → pane run で打ち込む)
-#   - --close-on-exit が無い (タブはコマンド終了後も残る。 後片付けは
-#     close-merged-review-tab が on_remove で行う)
-# ため、 スクリプトに切り出してある。 同名タブが既にあれば focus するだけ。
+# herdr には zellij の `new-tab --close-on-exit -- cmd` が無い（コマンド直生やし不可・
+# 終了で自動で閉じない）ため:
+#   - タブは `tab create` → `pane run` で作り、
+#   - review-pr の終了時に「自分のタブを id 指定で閉じる」ことで --close-on-exit を再現する
+#     （on_remove の close-merged-review-tab は PR がリストから消えた時のバックアップ）。
+#   - review タブは専用 workspace "reviews"（無ければ作成）にまとめ、作業スペースを汚さない。
+#     ラベルは $REVIEW_WORKSPACE で変更可。
 
 URL="${1:-}"
 NUMBER="${2:-}"
@@ -21,6 +23,7 @@ fi
 
 TAB_NAME="Review: ${REPO}#${NUMBER}"
 
+# 同名タブが既にあれば focus するだけ（herdr-tab-id は全 workspace を横断して探す）。
 EXISTING=$(herdr-tab-id "$TAB_NAME" || true)
 if [ -n "$EXISTING" ]; then
   herdr tab focus "$EXISTING" >/dev/null
@@ -28,9 +31,23 @@ if [ -n "$EXISTING" ]; then
   exit 0
 fi
 
-# --no-focus: レビュー依頼が飛んできても作業中のタブを奪わない
-# (旧構成の new-tab + go-to-previous-tab の置き換え)。
-CREATED=$(herdr tab create --label "$TAB_NAME" --no-focus)
+# 専用 workspace "reviews" を解決（無ければ作成 → 作成後に list で id を引き直す堅牢方式）。
+WS_LABEL="${REVIEW_WORKSPACE:-reviews}"
+ws_id() {
+  herdr workspace list 2>/dev/null \
+    | jq -r --arg l "$WS_LABEL" 'first(.result.workspaces[]? | select(.label == $l) | .workspace_id) // empty' 2>/dev/null
+}
+WSID=$(ws_id)
+if [ -z "$WSID" ]; then
+  herdr workspace create --label "$WS_LABEL" --no-focus >/dev/null 2>&1 || true
+  WSID=$(ws_id)
+fi
+WSOPT=()
+[ -n "$WSID" ] && WSOPT=(--workspace "$WSID")
+
+# --no-focus: レビュー依頼が飛んできても作業中のタブを奪わない。
+CREATED=$(herdr tab create "${WSOPT[@]}" --label "$TAB_NAME" --no-focus)
+TAB_ID=$(printf '%s' "$CREATED" | jq -r '.result.tab.tab_id // empty')
 PANE_ID=$(printf '%s' "$CREATED" | jq -r '.result.root_pane.pane_id // empty')
 
 if [ -z "$PANE_ID" ]; then
@@ -38,5 +55,8 @@ if [ -z "$PANE_ID" ]; then
   exit 70
 fi
 
-herdr pane run "$PANE_ID" "$(printf '%q ' review-pr "$URL" "$NUMBER" "$REPO")" >/dev/null
-echo "opened: $TAB_NAME (pane=$PANE_ID)"
+# review-pr を走らせ、終了したらこのタブを自分で閉じる（= --close-on-exit 相当）。
+RUNCMD="$(printf '%q ' review-pr "$URL" "$NUMBER" "$REPO")"
+[ -n "$TAB_ID" ] && RUNCMD="${RUNCMD}; herdr tab close $(printf '%q' "$TAB_ID")"
+herdr pane run "$PANE_ID" "$RUNCMD" >/dev/null
+echo "opened: $TAB_NAME (pane=$PANE_ID, ws=${WSID:-current})"
