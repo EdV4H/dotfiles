@@ -55,8 +55,12 @@ if [ -z "$PANE_ID" ]; then
   exit 70
 fi
 
-# review-pr を走らせ、終了したらこのタブを自分で閉じる（= --close-on-exit 相当）。
+# review-pr を走らせ、**成功した(exit 0)ときだけ**このタブを閉じる（= --close-on-exit 相当）。
+# `;` ではなく `&&` なのが肝: review-pr は `set -euo pipefail` なので [c] の途中
+# (claude 抽出 / gh api POST 等) で失敗すると即 exit する。`;` だと失敗しても無条件で
+# タブを閉じ、コメント挿入前に落ちてエラーも見えなくなる。`&&` なら失敗時はタブが残り、
+# エラーをその場で確認できる（閉じている=成功、開いたまま=要確認、と読める）。
 RUNCMD="$(printf '%q ' review-pr "$URL" "$NUMBER" "$REPO")"
-[ -n "$TAB_ID" ] && RUNCMD="${RUNCMD}; herdr tab close $(printf '%q' "$TAB_ID")"
+[ -n "$TAB_ID" ] && RUNCMD="${RUNCMD}&& herdr tab close $(printf '%q' "$TAB_ID")"
 herdr pane run "$PANE_ID" "$RUNCMD" >/dev/null
 echo "opened: $TAB_NAME (pane=$PANE_ID, ws=${WSID:-current})"
