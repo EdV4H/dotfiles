@@ -161,6 +161,51 @@ zellij から移行済み。 スクリプトから触るときの要点だけ:
 
 参考実装: `nix/home-manager/programs/herdr/`, `nix/home-manager/programs/claude-code/close-conflict-tab.sh`
 
+## サンドボックス (組織ポリシー / Claude Code の Bash)
+
+会社端末の Claude Code は Bash コマンドを OS 層のサンドボックス内で実行する (managed hook
+`/Library/Application Support/ClaudeCode/`)。セッション冒頭の `<sandbox-note>` が最新の正。
+**設定は時期により変わる** (2026-08 に数回変更あり)。以下は 2026-08-17 時点の要点。
+
+### 何が塞がれる / 何が例外か
+- **塞がれる**: unix ソケット接続 (nix daemon 等)、Mach IPC (pbcopy/pbpaste)、TCP listen、
+  **localhost の bind も connect も** (127.0.0.1 への直 curl/python は EPERM)、許可外ホスト通信、
+  ワークスペース・`/tmp/claude`・`$TMPDIR` **以外への書込**。
+- **例外 (サンドボックス外で走る)**: **行頭が** `git` / `gh` / `gcloud` / `bq` / `crit` / **`herdr`** 等の
+  許可コマンド、または `~/.claude/scripts/` 配下のスクリプトを**パス直接指定**で実行したとき。
+  判定はコマンド文字列のパターン一致。**`bash script.sh` で包む・`&&`連結・パイプ・for/while に
+  入れると例外が外れてサンドボックス内に落ちる**ので、許可コマンドは行頭の単発で打つ
+  (作業ディレクトリは `cd &&` でなく Bash ツールの実行ディレクトリ指定で合わせる)。
+- **herdr は例外に入っている** → `herdr` / `dev-up` / `dev-down` 等が Claude から直接叩ける。
+  (socket が塞がれていた時期用に `~/.claude/scripts/dev-ctl` という抜け道ラッパも用意済み。無害な保険)
+
+### localhost サーバと話す
+`~/.claude/scripts/lo-fetch <port> [path] [method]` を使う (127.0.0.1 固定の正規中継)。
+自分でサーバを bind したり直接 localhost に curl しない。サーバは人間がターミナルで起動する。
+
+### git worktree での作業
+- **作成・一覧は可** (`git worktree` / `herdr worktree` とも例外)。
+- ただし**書込許可ルートは Bash ツールの作業ディレクトリに固定**され、コマンド内 `cd` では移らない。
+  → **worktree の中で type-check/lint/build すると EPERM で死ぬ** (書込ルート外だから)。
+- **中で作業できる worktree は次のいずれか**:
+  1. リポジトリの **`.claude/worktrees/` 配下** (常時書込可。ここに作るのが正規)
+  2. **`EnterWorktree` ツール**で作る (.claude/worktrees 配下・書込ルートが追従)
+  3. **サブエージェント** (Agent の `cwd=その worktree`、または `isolation:"worktree"`) に検証を投げる
+- 既存の兄弟ディレクトリ worktree (`<repo>-<name>` 等) はメイン Bash から検証不可 →
+  サブエージェント(cwd=worktree)に投げる / `.claude/worktrees/` へ移設 / その worktree でセッション起動。
+- **モノレポはリポジトリルートをセッション cwd に** (turbo 等が兄弟パッケージに書けず失敗するため)。
+
+### やってはいけない / 依頼に回すこと
+- **迂回しない**: chmod・サンドボックス外での再実行・別フラグ脱出等でサンドボックスを破らない。
+  正規ツールへの乗り換えは可 (Web取得は WebFetch、外部連携は MCP、`ax`/curl でシェルアウトしない)。
+- **git 書込みの別経路禁止**: ローカルの commit/push/PR が塞がれても MCP/GitHub API で作り直さない。
+  `index.lock: Operation not permitted` は**ロック競合でなく書込ルート不一致**。正規は「書込ルートを
+  対象に合わせてローカルで同じ操作を回す」(worktree の項) だけ。無理なら失敗内容をそのまま報告して止まる。
+- **mise install / mise use 等の導入系は不可** (承認を通しても OS 層は外れない)。読取(`mise ls`)・
+  導入済み実行は可。導入が要るときはユーザーにターミナル実行を依頼する。
+- 塞がれた操作で正規の代替が無ければ、**失敗コマンドと理由をそのまま報告して指示待ち** (黙って
+  「できません」と見送らない — 許可か不明ならまず試すか人間に確認)。
+
 ## PC 移行手順
 
 新しい Mac に乗り換えるときの手順。 dotfiles (nix) で OS / dotfile / launchd / skills は再現できるので、 ここでは **nix 管理外の state** (gitignored な `.env` / `.npmrc` / SSH 鍵 / cache 等) と **クローン済み repo** の引き継ぎだけを扱う。
