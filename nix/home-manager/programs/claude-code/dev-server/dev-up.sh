@@ -112,9 +112,24 @@ printf '%s\0' "$@" > "$statedir/$name.argv"
 # stays short. It is still quoted, because $statedir can contain spaces.
 runcmd=$(printf '%q ' "$runner_bin" "$name" "$statedir")
 
+# Resolve (creating if needed) a dedicated workspace to group all dev servers, so
+# they don't clutter your working space. Override the label with $DEV_SERVERS_WORKSPACE.
+dev_ws_id() {
+  local label="${DEV_SERVERS_WORKSPACE:-dev-servers}" id
+  id=$(herdr workspace list 2>/dev/null | jq -r --arg l "$label" \
+        '.result.workspaces[]? | select(.label==$l) | .workspace_id' | head -1)
+  if [ -z "$id" ]; then
+    herdr workspace create --label "$label" --no-focus >/dev/null 2>&1 || true
+    id=$(herdr workspace list 2>/dev/null | jq -r --arg l "$label" \
+          '.result.workspaces[]? | select(.label==$l) | .workspace_id' | head -1)
+  fi
+  printf '%s' "$id"
+}
+
 case "$place" in
   tab)
-    created=$(herdr tab create --label "dev:$name" --cwd "$cwd" --no-focus)
+    wsopt=(); wsid=$(dev_ws_id); [ -n "$wsid" ] && wsopt=(--workspace "$wsid")
+    created=$(herdr tab create "${wsopt[@]}" --label "dev:$name" --cwd "$cwd" --no-focus)
     tabid=$(printf '%s' "$created" | jq -r '.result.tab.tab_id')
     paneid=$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id')
     ;;

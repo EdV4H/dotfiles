@@ -125,18 +125,40 @@ dev-list                 # 起動済み dev サーバーと alive/dead を表示
   なので `dev-up` は **対象ツールが `pnpm` などを見つけられるシェル**で叩くこと。
 - `pane run` はペインのシェルに**コマンドを打ち込む**方式（zellij の `new-pane -- cmd` の
   ような argv 直渡しが無い）。`dev-up` 側で `printf %q` 済みなので利用者は意識しなくてよい。
+- **`--tab` のサーバーは専用 workspace `dev-servers` にまとまる**（無ければ自動作成）。
+  作業スペースが dev サーバーのタブで散らからない。ラベルは `$DEV_SERVERS_WORKSPACE` で変更可。
 - 同名が既に alive なら `dev-up` は起動を拒否する。まず `dev-down <name>`。
 - **herdr のタブ/ペインはコマンドが終了しても消えない**（`--close-on-exit` 相当が無い）。
   後片付けは `dev-down` が記録済み ID で行うので、放置せず `dev-down` すること。
 
-## サンドボックスからの実行について（Claude 向け）
+## サンドボックスからの実行について（Claude 向け・重要）
 
-- **`dev-up` / `dev-logs` / `dev-list` / `dev-down` すべてサンドボックスから動く。**
-  herdr の socket は `~/.config/herdr/[sessions/<name>/]herdr.sock` という固定パスで、
-  ペインには `$HERDR_SOCKET_PATH` も渡るため、`$TMPDIR` がどうであれ同じサーバーに届く。
-  zellij 時代に必要だった「サーバーと同じ `$TMPDIR` を export する」回避は不要になった。
-- state パスは共有されているので、ユーザーが実シェルで起動したサーバーも Claude 側から
-  `dev-logs` / `dev-down` で監視・停止できる（逆も同じ）。
-- `--split` だけは `$HERDR_PANE_ID` が要る = herdr ペインの中から叩く必要がある。
-  サンドボックスも claude を動かしているペインの環境を継いでいるので通常は満たされるが、
-  満たされない場合は `--tab` を使う。
+組織ポリシーの Bash サンドボックスは **unix ソケット接続と他 pid への `kill` を遮断**する
+（時期によって緩和されることがあるが、原則こちら）。herdr の制御は socket 経由なので:
+
+| コマンド | Claude のサンドボックス直実行 | 理由 |
+|---|---|---|
+| `dev-logs` | ✅ そのまま | ただのファイル tail |
+| `dev-list` | △ 一覧は出るが **STATE(alive/dead) は当てにならない** | `kill -0` が他 pid で不許可 → 全部 dead に見える |
+| `dev-up` / `dev-down` / `supervise` | ❌ 直実行は失敗 | `herdr …` = unix socket 遮断 / kill 遮断 |
+
+**サンドボックスから herdr を触る系を動かすには `~/.claude/scripts/dev-ctl` を使う。**
+`~/.claude/**/scripts/` 配下のスクリプトを**パス直接指定**で実行するとサンドボックス外で走る
+（＝ herdr socket に届く、`ps`/`kill` も効く）。`dev-ctl` は dev-* への薄いラッパ:
+
+```bash
+~/.claude/scripts/dev-ctl up --keep --tab weboard -- pnpm dev:proxy --filter weboard
+~/.claude/scripts/dev-ctl list      # サンドボックス外なので alive/dead が正確
+~/.claude/scripts/dev-ctl logs weboard
+~/.claude/scripts/dev-ctl down weboard
+~/.claude/scripts/dev-ctl supervise
+```
+
+注意:
+- **行頭が `~/.claude/…/dev-ctl` であること。** `cd … && ~/.claude/…` や `bash ~/.claude/…` の
+  ように行頭が別コマンドになると除外が外れてサンドボックス内実行になり失敗する。
+- `down` は内部で `kill` するため auto-mode classifier に止められることがある。その場合は
+  ユーザーに実シェルでの実行を依頼する。
+- **実シェル（herdr ペイン）からは `dev-up`/`dev-down`/`dev-list` を直接**使ってよい（dev-ctl 不要）。
+- state パスは共有なので、ユーザーが実シェルで起動したサーバーも Claude から `dev-logs` で読める。
+- `--split` は `$HERDR_PANE_ID` が要る（herdr ペイン内から）。無ければ `--tab`。

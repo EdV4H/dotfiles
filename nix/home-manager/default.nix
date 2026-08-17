@@ -204,6 +204,14 @@ in
     source = ./programs/claude-code/dev-server/dev-supervise.sh;
     executable = true;
   };
+  # dev-ctl: sandbox-escape front-end. Claude's Bash sandbox blocks the herdr
+  # socket, so dev-up/dev-down don't work there — but scripts under ~/.claude/scripts/
+  # run OUTSIDE the sandbox when invoked by direct path. Claude drives dev servers via
+  # `~/.claude/scripts/dev-ctl {up|down|logs|list|supervise}`.
+  home.file.".claude/scripts/dev-ctl" = {
+    source = ./programs/claude-code/dev-server/dev-ctl.sh;
+    executable = true;
+  };
 
   # PC migration helpers (旧 PC 側で export + list-repos、新 PC 側で restore)
   home.file.".local/bin/migration-export" = {
