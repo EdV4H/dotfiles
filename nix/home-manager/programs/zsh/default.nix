@@ -53,7 +53,7 @@
 
     # Claude
     ccd = "command claude --dangerously-skip-permissions";
-    ccdr = "command claude --dangerously-skip-permissions --remote-control";
+    cc = "command claude --dangerously-skip-permissions --remote-control";
 
     # Neovim
     v = "nvim";
