@@ -205,21 +205,32 @@ build_grid() {
   [ "$total" -ge 1 ] || { echo "grid: 対象セッションが見つかりません (~/.claude/projects/*/*.jsonl)" >&2; exit 1; }
 
   workspace Grid
-  local COLS="$cols"
-  local i col=0 rowstart="" prev="" pane cmd label
-  for ((i = 0; i < total; i++)); do
-    cmd="$CLAUDE --resume ${SIDS[$i]}"
-    label=$(basename "${CWDS[$i]}")
-    if [ "$i" -eq 0 ]; then
-      pane=$(g_tab "$label" "${CWDS[$i]}" $cmd)
-      rowstart="$pane"; prev="$pane"; col=1
-    elif [ "$col" -ge "$COLS" ]; then
-      pane=$(g_split down "$rowstart" "$label" "${CWDS[$i]}" $cmd)   # 新しい行
-      rowstart="$pane"; prev="$pane"; col=1
+  # 幾何は 2 フェーズ: まず全幅の行を rows 個つくり(下 split)、その後に各行を列に割る(右 split)。
+  # 列を先に割ると「行 split」が 1 列目だけを割ってしまい崩れるので、行を全部先に切る。
+  # セッションは行優先(左→右, 上→下)で割り当て: R[r] の先頭が r*cols、列が r*cols+c。
+  local -a ROWSTART=()
+  local r c k prev pane cmd label nrows=0
+
+  # フェーズ1: 全幅の行 start ペインを作る
+  for ((r = 0; r < rows; r++)); do
+    k=$((r * cols)); [ "$k" -lt "$total" ] || break
+    cmd="$CLAUDE --resume ${SIDS[$k]}"; label=$(basename "${CWDS[$k]}")
+    if [ "$r" -eq 0 ]; then
+      pane=$(g_tab "$label" "${CWDS[$k]}" $cmd)
     else
-      pane=$(g_split right "$prev" "$label" "${CWDS[$i]}" $cmd)      # 同じ行の右へ
-      prev="$pane"; col=$((col + 1))
+      pane=$(g_split down "${ROWSTART[$((r - 1))]}" "$label" "${CWDS[$k]}" $cmd)
     fi
+    ROWSTART[$r]="$pane"; nrows=$((nrows + 1))
+  done
+
+  # フェーズ2: 各行を列に割る
+  for ((r = 0; r < nrows; r++)); do
+    prev="${ROWSTART[$r]}"
+    for ((c = 1; c < cols; c++)); do
+      k=$((r * cols + c)); [ "$k" -lt "$total" ] || break
+      cmd="$CLAUDE --resume ${SIDS[$k]}"; label=$(basename "${CWDS[$k]}")
+      prev=$(g_split right "$prev" "$label" "${CWDS[$k]}" $cmd)
+    done
   done
   echo "grid: $total セッションを ${rows}行×${cols}列グリッドに配置（各ペインで Enter → resume）"
 }
