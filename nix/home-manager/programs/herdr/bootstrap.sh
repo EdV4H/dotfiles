@@ -156,25 +156,50 @@ build_cockpit() {
 # 同じディレクトリに複数セッションがあると取り違えるし、grid に同 dir が2枚あると両方が
 # 同じセッションを掴んで競合する。セッションID を明示すれば取り違え・競合しない。
 
-# grid 用: 絶対 cwd でタブ/split を作りコマンドを入力する（tab/below/right は HOME 相対専用）
-g_tab() {   # <label> <abs-cwd> <cmd...> → pane id
-  local label="$1" cwd="$2"; shift 2
-  local out pane
-  out=$(herdr tab create --workspace "$WS_ID" --label "$label" --cwd "$cwd" --no-focus)
-  pane=$(printf '%s' "$out" | jq -r '.result.root_pane.pane_id')
-  [ -n "$pane" ] && [ "$pane" != null ] || { echo "grid: tab create failed: $out" >&2; exit 70; }
-  [ "$#" -gt 0 ] && herdr pane send-text "$pane" "$*" >/dev/null
-  printf '%s' "$pane"
+# grid ヘルパー（すべて HOME で split し、割当時に cd で移動する）。
+# 均等サイズにするため「半分ずつ再帰分割(balanced)」する: 行/列が power-of-2(2,4,8…)なら
+# 全ペイン完全に均等。逐次 split(50/25/12.5…) の偏りを避けるのが目的。
+# build_grid の local(SIDS/CWDS/total/cols) は bash の動的スコープで各ヘルパーから見える。
+
+grid_assign() {  # <pane> <session-index> : 名前 + `cd <cwd> && claude --resume <id>` を入力(未実行)
+  local pane="$1" cwd="${CWDS[$2]}" sid="${SIDS[$2]}"
+  herdr pane rename "$pane" "$(basename "$cwd")" >/dev/null 2>&1 || true
+  herdr pane send-text "$pane" "cd $(printf '%q' "$cwd") && $CLAUDE --resume $sid" >/dev/null
 }
-g_split() { # <right|down> <target-pane> <label> <abs-cwd> <cmd...> → pane id
-  local dir="$1" target="$2" label="$3" cwd="$4"; shift 4
+
+grid_split1() {  # <right|down> <target-pane> → 新ペイン id (cwd は割当時に cd で合わせる)
   local out pane
-  out=$(herdr pane split --pane "$target" --direction "$dir" --cwd "$cwd" --no-focus)
+  out=$(herdr pane split --pane "$2" --direction "$1" --cwd "$HOME" --no-focus)
   pane=$(printf '%s' "$out" | jq -r '.result.pane.pane_id')
   [ -n "$pane" ] && [ "$pane" != null ] || { echo "grid: split failed: $out" >&2; exit 70; }
-  herdr pane rename "$pane" "$label" >/dev/null 2>&1 || true
-  [ "$#" -gt 0 ] && herdr pane send-text "$pane" "$*" >/dev/null
   printf '%s' "$pane"
+}
+
+# <pane> を <dir> 方向に <k> 個の均等ペインへ分割し、セッション[ks..ks+k-1]を視覚順で割当。
+grid_place() {  # <dir> <pane> <ks> <k>
+  local dir="$1" pane="$2" ks="$3" k="$4"
+  if [ "$k" -le 1 ]; then grid_assign "$pane" "$ks"; return; fi
+  local half=$((k / 2)) rest np
+  rest=$((k - half))
+  np=$(grid_split1 "$dir" "$pane")               # pane=前半(左/上), np=後半(右/下)
+  grid_place "$dir" "$pane" "$ks"            "$half"
+  grid_place "$dir" "$np"   "$((ks + half))" "$rest"
+}
+
+# <pane> を下方向に <nr> 行へ均等分割し、各行(全幅)を列に割ってセッションを敷き詰める。
+# 行を全部先に切ってから列に割るので各行が全幅になる。
+grid_rows() {  # <pane> <row-start> <nr>
+  local pane="$1" rs="$2" nr="$3"
+  if [ "$nr" -le 1 ]; then
+    local ch=$((total - rs * cols)); [ "$ch" -gt "$cols" ] && ch=$cols   # 最終行は余りだけ
+    grid_place right "$pane" "$((rs * cols))" "$ch"
+    return
+  fi
+  local half=$((nr / 2)) rest np
+  rest=$((nr - half))
+  np=$(grid_split1 down "$pane")
+  grid_rows "$pane" "$rs"            "$half"
+  grid_rows "$np"   "$((rs + half))" "$rest"
 }
 
 build_grid() {
@@ -205,34 +230,18 @@ build_grid() {
   [ "$total" -ge 1 ] || { echo "grid: 対象セッションが見つかりません (~/.claude/projects/*/*.jsonl)" >&2; exit 1; }
 
   workspace Grid
-  # 幾何は 2 フェーズ: まず全幅の行を rows 個つくり(下 split)、その後に各行を列に割る(右 split)。
-  # 列を先に割ると「行 split」が 1 列目だけを割ってしまい崩れるので、行を全部先に切る。
-  # セッションは行優先(左→右, 上→下)で割り当て: R[r] の先頭が r*cols、列が r*cols+c。
-  local -a ROWSTART=()
-  local r c k prev pane cmd label nrows=0
+  # 実際に使う行数 = ceil(total/cols)（total は rows*cols で上限済みなので rows 以下）
+  local arows=$(((total + cols - 1) / cols))
+  [ "$arows" -gt "$rows" ] && arows=$rows
 
-  # フェーズ1: 全幅の行 start ペインを作る
-  for ((r = 0; r < rows; r++)); do
-    k=$((r * cols)); [ "$k" -lt "$total" ] || break
-    cmd="$CLAUDE --resume ${SIDS[$k]}"; label=$(basename "${CWDS[$k]}")
-    if [ "$r" -eq 0 ]; then
-      pane=$(g_tab "$label" "${CWDS[$k]}" $cmd)
-    else
-      pane=$(g_split down "${ROWSTART[$((r - 1))]}" "$label" "${CWDS[$k]}" $cmd)
-    fi
-    ROWSTART[$r]="$pane"; nrows=$((nrows + 1))
-  done
+  # グリッドの最初のペイン（タブの root）を HOME で作る
+  local out first
+  out=$(herdr tab create --workspace "$WS_ID" --label grid --cwd "$HOME" --no-focus)
+  first=$(printf '%s' "$out" | jq -r '.result.root_pane.pane_id')
+  [ -n "$first" ] && [ "$first" != null ] || { echo "grid: tab create failed: $out" >&2; exit 70; }
 
-  # フェーズ2: 各行を列に割る
-  for ((r = 0; r < nrows; r++)); do
-    prev="${ROWSTART[$r]}"
-    for ((c = 1; c < cols; c++)); do
-      k=$((r * cols + c)); [ "$k" -lt "$total" ] || break
-      cmd="$CLAUDE --resume ${SIDS[$k]}"; label=$(basename "${CWDS[$k]}")
-      prev=$(g_split right "$prev" "$label" "${CWDS[$k]}" $cmd)
-    done
-  done
-  echo "grid: $total セッションを ${rows}行×${cols}列グリッドに配置（各ペインで Enter → resume）"
+  grid_rows "$first" 0 "$arows"    # 均等に行→列へ分割してセッションを敷き詰める
+  echo "grid: $total セッションを ${rows}行×${cols}列(均等)グリッドに配置（各ペインで Enter → resume）"
 }
 
 case "$layout" in
