@@ -2,8 +2,9 @@
 # Build a herdr workspace from scratch — the replacement for the old zellij KDL
 # layouts (work.kdl / cockpit.kdl).
 #
-# usage: herdr-bootstrap <work|cockpit|grid [N]>
-#   grid [N]: 直近アクティブな N セッション(既定8)を1タブのグリッドに resume で並べる
+# usage: herdr-bootstrap <work|cockpit|grid [COLS] [ROWS]>
+#   grid [COLS] [ROWS]: 直近アクティブな COLS×ROWS 個(既定 4×2=8)のセッションを
+#                       1タブのグリッド(COLS列 × ROWS行)に resume で並べる
 #
 # Why a script and not a config file: herdr has no declarative layout format.
 # A running herdr server keeps workspaces/tabs/panes itself and restores them
@@ -147,13 +148,13 @@ build_cockpit() {
   below "$p" "dotfiles" >/dev/null
 }
 
-# grid [N]: 直近アクティブな N 個(既定8)のセッションを 1 タブ内のグリッドに並べる。
-# 各ペインは cd 済み + `claude --resume <session-id>` を入力済み(未実行, Enter で起動)。
+# grid [COLS] [ROWS]: 直近アクティブな COLS×ROWS 個(既定 4×2)のセッションを 1 タブ内の
+# グリッド(COLS列 × ROWS行)に並べる。各ペインは cd 済み + `claude --resume <session-id>` を
+# 入力済み(未実行, Enter で起動)。行優先で敷き詰める(セッションが足りなければ埋まる分だけ)。
 #
 # なぜ -c(continue) でなく resume <id> か: -c は「その dir の最新セッション」を継続するので、
 # 同じディレクトリに複数セッションがあると取り違えるし、grid に同 dir が2枚あると両方が
 # 同じセッションを掴んで競合する。セッションID を明示すれば取り違え・競合しない。
-# 列数は $GRID_COLS(既定4)で変えられる。行優先で敷き詰める(最終行は余りぶんだけ)。
 
 # grid 用: 絶対 cwd でタブ/split を作りコマンドを入力する（tab/below/right は HOME 相対専用）
 g_tab() {   # <label> <abs-cwd> <cmd...> → pane id
@@ -177,9 +178,12 @@ g_split() { # <right|down> <target-pane> <label> <abs-cwd> <cmd...> → pane id
 }
 
 build_grid() {
-  local n="${1:-8}"
-  case "$n" in ''|*[!0-9]*) echo "grid: 個数は正の整数で: herdr-bootstrap grid [N]" >&2; exit 64 ;; esac
-  [ "$n" -ge 1 ] 2>/dev/null || n=8
+  local cols="${1:-4}" rows="${2:-2}"
+  case "$cols" in ''|*[!0-9]*) cols=4 ;; esac
+  case "$rows" in ''|*[!0-9]*) rows=2 ;; esac
+  [ "$cols" -ge 1 ] 2>/dev/null || cols=4
+  [ "$rows" -ge 1 ] 2>/dev/null || rows=2
+  local n=$((cols * rows))
 
   # 直近アクティブな N セッションを .jsonl の mtime 順で拾う（このセッションは除外）。
   local SELF="7990c3e2-fa2b-4903-ae64-eeafdf18ef89"
@@ -199,7 +203,7 @@ build_grid() {
   [ "$total" -ge 1 ] || { echo "grid: 対象セッションが見つかりません (~/.claude/projects/*/*.jsonl)" >&2; exit 1; }
 
   workspace Grid
-  local COLS="${GRID_COLS:-4}"
+  local COLS="$cols"
   local i col=0 rowstart="" prev="" pane cmd label
   for ((i = 0; i < total; i++)); do
     cmd="$CLAUDE --resume ${SIDS[$i]}"
@@ -215,13 +219,13 @@ build_grid() {
       prev="$pane"; col=$((col + 1))
     fi
   done
-  echo "grid: $total セッションを ${COLS}列グリッドに配置（各ペインで Enter → resume）"
+  echo "grid: $total セッションを ${cols}列×${rows}行グリッドに配置（各ペインで Enter → resume）"
 }
 
 case "$layout" in
   work)    build_work ;;
   cockpit) build_cockpit ;;
-  grid)    build_grid "${2:-}" ;;
+  grid)    build_grid "${2:-}" "${3:-}" ;;
 esac
 
 # Drop the empty tab herdr created with the workspace.
