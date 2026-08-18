@@ -187,19 +187,21 @@ build_grid() {
 
   # 直近アクティブな N セッションを .jsonl の mtime 順で拾う（このセッションは除外）。
   local SELF="7990c3e2-fa2b-4903-ae64-eeafdf18ef89"
-  local -a SIDS CWDS
-  local f sid cwd
+  # NOTE: カウンタで数える。set -u の bash 3.2 では空配列の ${#arr[@]} が
+  # "unbound variable" になるため、${#SIDS[@]} は使わない。
+  local -a SIDS=() CWDS=()
+  local f sid cwd count=0
   while IFS= read -r f; do
-    [ "${#SIDS[@]}" -ge "$n" ] && break
+    [ "$count" -ge "$n" ] && break
     sid=$(basename "$f" .jsonl)
     [ "$sid" = "$SELF" ] && continue
     # cwd はセッション transcript から (grep -m1 で先頭の "cwd":"..." を高速抽出)
     cwd=$(grep -m1 -oE '"cwd":"[^"]+"' "$f" 2>/dev/null | sed 's/^"cwd":"//; s/"$//')
     [ -n "$cwd" ] && [ -d "$cwd" ] || continue
-    SIDS+=("$sid"); CWDS+=("$cwd")
+    SIDS[$count]="$sid"; CWDS[$count]="$cwd"; count=$((count + 1))
   done < <(ls -t "$HOME"/.claude/projects/*/*.jsonl 2>/dev/null)
 
-  local total=${#SIDS[@]}
+  local total=$count
   [ "$total" -ge 1 ] || { echo "grid: 対象セッションが見つかりません (~/.claude/projects/*/*.jsonl)" >&2; exit 1; }
 
   workspace Grid
