@@ -91,7 +91,7 @@ nix build .#darwinConfigurations.ATR-LAP-OSX-YUSUKE-MARUYAMA.system
 - `lg` → `lazygit`
 - `la` → `ls -a`
 - `ccd` → `claude --dangerously-skip-permissions`
-- `cc` → `claude --dangerously-skip-permissions --remote-control`
+- `cc` → `claude --remote-control`
 - `cl` → `clear`
 
 ## Working with this Configuration
