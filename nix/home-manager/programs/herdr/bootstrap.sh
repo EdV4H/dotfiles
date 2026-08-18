@@ -2,9 +2,9 @@
 # Build a herdr workspace from scratch — the replacement for the old zellij KDL
 # layouts (work.kdl / cockpit.kdl).
 #
-# usage: herdr-bootstrap <work|cockpit|grid [COLS] [ROWS]>
-#   grid [COLS] [ROWS]: 直近アクティブな COLS×ROWS 個(既定 4×2=8)のセッションを
-#                       1タブのグリッド(COLS列 × ROWS行)に resume で並べる
+# usage: herdr-bootstrap <work|cockpit|grid [ROWS] [COLS]>
+#   grid [ROWS] [COLS]: 直近アクティブな ROWS×COLS 個(既定 2×4=8)のセッションを
+#                       1タブのグリッド(ROWS行 × COLS列)に resume で並べる
 #
 # Why a script and not a config file: herdr has no declarative layout format.
 # A running herdr server keeps workspaces/tabs/panes itself and restores them
@@ -148,8 +148,8 @@ build_cockpit() {
   below "$p" "dotfiles" >/dev/null
 }
 
-# grid [COLS] [ROWS]: 直近アクティブな COLS×ROWS 個(既定 4×2)のセッションを 1 タブ内の
-# グリッド(COLS列 × ROWS行)に並べる。各ペインは cd 済み + `claude --resume <session-id>` を
+# grid [ROWS] [COLS]: 直近アクティブな ROWS×COLS 個(既定 2×4)のセッションを 1 タブ内の
+# グリッド(ROWS行 × COLS列)に並べる。各ペインは cd 済み + `claude --resume <session-id>` を
 # 入力済み(未実行, Enter で起動)。行優先で敷き詰める(セッションが足りなければ埋まる分だけ)。
 #
 # なぜ -c(continue) でなく resume <id> か: -c は「その dir の最新セッション」を継続するので、
@@ -178,11 +178,11 @@ g_split() { # <right|down> <target-pane> <label> <abs-cwd> <cmd...> → pane id
 }
 
 build_grid() {
-  local cols="${1:-4}" rows="${2:-2}"
-  case "$cols" in ''|*[!0-9]*) cols=4 ;; esac
+  local rows="${1:-2}" cols="${2:-4}"
   case "$rows" in ''|*[!0-9]*) rows=2 ;; esac
-  [ "$cols" -ge 1 ] 2>/dev/null || cols=4
+  case "$cols" in ''|*[!0-9]*) cols=4 ;; esac
   [ "$rows" -ge 1 ] 2>/dev/null || rows=2
+  [ "$cols" -ge 1 ] 2>/dev/null || cols=4
   local n=$((cols * rows))
 
   # 直近アクティブな N セッションを .jsonl の mtime 順で拾う（このセッションは除外）。
@@ -219,7 +219,7 @@ build_grid() {
       prev="$pane"; col=$((col + 1))
     fi
   done
-  echo "grid: $total セッションを ${cols}列×${rows}行グリッドに配置（各ペインで Enter → resume）"
+  echo "grid: $total セッションを ${rows}行×${cols}列グリッドに配置（各ペインで Enter → resume）"
 }
 
 case "$layout" in
