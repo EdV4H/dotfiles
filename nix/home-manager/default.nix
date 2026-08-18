@@ -48,6 +48,7 @@ in
       eza
       bat
       fd
+      ffmpeg
       direnv
       uv
       awscli2
