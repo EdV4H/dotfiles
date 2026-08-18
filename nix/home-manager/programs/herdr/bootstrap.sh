@@ -27,7 +27,7 @@ if ! herdr tab list >/dev/null 2>&1; then
   exit 69
 fi
 
-CLAUDE="claude --dangerously-skip-permissions"
+CLAUDE="claude"
 
 WS_ID=""
 SEED_TAB=""
