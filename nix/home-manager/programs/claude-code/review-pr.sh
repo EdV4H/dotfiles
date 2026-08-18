@@ -164,27 +164,45 @@ fi
 REVIEW_TAB_ID=$(herdr-tab-id "Review: ${REPO}#${NUMBER}" 2>/dev/null || true)
 [ -n "$REVIEW_TAB_ID" ] && herdr tab focus "$REVIEW_TAB_ID" >/dev/null 2>&1 || true
 
-# Step 2: 選択肢を提示
+# Step 2: 選択肢を提示（メニューはループ。API 失敗時は abort せずメニューに戻り、[r] で
+# 直前アクションを再試行できる。アクション実行中は set -e を止め、各 API 呼び出しの
+# 失敗を明示チェックして「失敗→メニューへ戻す／成功→exit 0(=タブ close)」に振り分ける）
+set +e
+LAST_ACTION=""
+while true; do
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  [a] Approve this PR"
 echo "  [c] Comment concerns as pending review (open in browser)"
 echo "  [d] Discuss with Claude Code"
 echo "  [o] Open in browser"
+echo "  [r] Retry last action (API 落ち等のリトライ用)"
 echo "  [q] Quit"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 read -r -p "Choose action: " choice
 
+# [r] は直前に実行したアクションを再実行する
+if [ "$choice" = "r" ]; then
+  if [ -z "$LAST_ACTION" ]; then echo "↻ 直前のアクションがありません。"; continue; fi
+  echo "↻ retrying: [$LAST_ACTION]"
+  choice="$LAST_ACTION"
+fi
+
 case "$choice" in
   a)
-    gh pr review "$NUMBER" -R "$REPO" --approve --body "LGTM 👍 (Reviewed by Claude Code)"
-    echo "✅ Approved!"
+    LAST_ACTION=a
+    if gh pr review "$NUMBER" -R "$REPO" --approve --body "LGTM 👍 (Reviewed by Claude Code)"; then
+      echo "✅ Approved!"
+      exit 0
+    fi
+    echo "❌ approve に失敗しました(API 等)。[r] で再試行できます。"
     ;;
   c)
+    LAST_ACTION=c
     echo "🤖 Extracting concerns as inline comments..."
     OWNER="${REPO%/*}"
     REPO_NAME="${REPO#*/}"
-    COMMIT_ID=$(gh pr view "$NUMBER" -R "$REPO" --json headRefOid -q '.headRefOid')
-    DIFF=$(gh pr diff "$NUMBER" -R "$REPO")
+    COMMIT_ID=$(gh pr view "$NUMBER" -R "$REPO" --json headRefOid -q '.headRefOid') || { echo "❌ commit-id 取得に失敗(API)。[r] で再試行できます。"; continue; }
+    DIFF=$(gh pr diff "$NUMBER" -R "$REPO") || { echo "❌ diff 取得に失敗(API)。[r] で再試行できます。"; continue; }
 
     # diffをパースして各行に絶対行番号を付与（Claudeが行番号を計算する必要をなくす）
     # +行とコンテキスト行（スペース始まり）の両方にアノテーションを付ける
@@ -234,7 +252,7 @@ case "$choice" in
 ${ANNOTATED_DIFF}
 
 --- REVIEW ---
-${REVIEW_RESULT}")
+${REVIEW_RESULT}") || { echo "❌ Claude での抽出に失敗。[r] で再試行できます。"; continue; }
 
     # 余計な装飾を除去
     COMMENTS_JSON=$(echo "$COMMENTS_JSON" | sed -n '/^\[/,/^\]/p')
@@ -250,11 +268,15 @@ ${REVIEW_RESULT}")
     PAYLOAD=$(jq -n --arg commit "$COMMIT_ID" --argjson comments "$COMMENTS_JSON" \
       '{commit_id: $commit, comments: $comments}')
 
-    echo "$PAYLOAD" | gh api "repos/${OWNER}/${REPO_NAME}/pulls/${NUMBER}/reviews" \
-      --method POST --input - > /dev/null
+    if ! echo "$PAYLOAD" | gh api "repos/${OWNER}/${REPO_NAME}/pulls/${NUMBER}/reviews" \
+      --method POST --input - > /dev/null; then
+      echo "❌ コメント投稿に失敗しました(API 等)。[r] で再試行できます。"
+      continue
+    fi
 
     echo "✅ Pending review created. Opening browser..."
     open "${URL}/files"
+    exit 0
     ;;
   d)
     exec claude --dangerously-skip-permissions \
@@ -265,9 +287,14 @@ ${REVIEW_RESULT}")
 ${REVIEW_RESULT}"
     ;;
   o)
+    LAST_ACTION=o
     open "$URL"
     ;;
   q)
     exit 0
     ;;
+  *)
+    echo "不明な選択: '$choice'"
+    ;;
 esac
+done
