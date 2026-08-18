@@ -2,7 +2,8 @@
 # Build a herdr workspace from scratch — the replacement for the old zellij KDL
 # layouts (work.kdl / cockpit.kdl).
 #
-# usage: herdr-bootstrap <work|cockpit|grid>
+# usage: herdr-bootstrap <work|cockpit|grid [N]>
+#   grid [N]: 直近アクティブな N セッション(既定8)を1タブのグリッドに resume で並べる
 #
 # Why a script and not a config file: herdr has no declarative layout format.
 # A running herdr server keeps workspaces/tabs/panes itself and restores them
@@ -146,44 +147,81 @@ build_cockpit() {
   below "$p" "dotfiles" >/dev/null
 }
 
-# grid: 1 タブに「よく見る8個」を 4列×2行の均等グリッドで並べる（cockpit を一望する用）。
-# 各ペインは cd 済み・コマンド入力済みで未実行（Enter で起動する）。
-# ★「よく見る8個」はこの LIST を編集する: "ラベル|HOME からの相対パス"、上段4→下段4 の順。
+# grid [N]: 直近アクティブな N 個(既定8)のセッションを 1 タブ内のグリッドに並べる。
+# 各ペインは cd 済み + `claude --resume <session-id>` を入力済み(未実行, Enter で起動)。
+#
+# なぜ -c(continue) でなく resume <id> か: -c は「その dir の最新セッション」を継続するので、
+# 同じディレクトリに複数セッションがあると取り違えるし、grid に同 dir が2枚あると両方が
+# 同じセッションを掴んで競合する。セッションID を明示すれば取り違え・競合しない。
+# 列数は $GRID_COLS(既定4)で変えられる。行優先で敷き詰める(最終行は余りぶんだけ)。
+
+# grid 用: 絶対 cwd でタブ/split を作りコマンドを入力する（tab/below/right は HOME 相対専用）
+g_tab() {   # <label> <abs-cwd> <cmd...> → pane id
+  local label="$1" cwd="$2"; shift 2
+  local out pane
+  out=$(herdr tab create --workspace "$WS_ID" --label "$label" --cwd "$cwd" --no-focus)
+  pane=$(printf '%s' "$out" | jq -r '.result.root_pane.pane_id')
+  [ -n "$pane" ] && [ "$pane" != null ] || { echo "grid: tab create failed: $out" >&2; exit 70; }
+  [ "$#" -gt 0 ] && herdr pane send-text "$pane" "$*" >/dev/null
+  printf '%s' "$pane"
+}
+g_split() { # <right|down> <target-pane> <label> <abs-cwd> <cmd...> → pane id
+  local dir="$1" target="$2" label="$3" cwd="$4"; shift 4
+  local out pane
+  out=$(herdr pane split --pane "$target" --direction "$dir" --cwd "$cwd" --no-focus)
+  pane=$(printf '%s' "$out" | jq -r '.result.pane.pane_id')
+  [ -n "$pane" ] && [ "$pane" != null ] || { echo "grid: split failed: $out" >&2; exit 70; }
+  herdr pane rename "$pane" "$label" >/dev/null 2>&1 || true
+  [ "$#" -gt 0 ] && herdr pane send-text "$pane" "$*" >/dev/null
+  printf '%s' "$pane"
+}
+
 build_grid() {
+  local n="${1:-8}"
+  case "$n" in ''|*[!0-9]*) echo "grid: 個数は正の整数で: herdr-bootstrap grid [N]" >&2; exit 64 ;; esac
+  [ "$n" -ge 1 ] 2>/dev/null || n=8
+
+  # 直近アクティブな N セッションを .jsonl の mtime 順で拾う（このセッションは除外）。
+  local SELF="7990c3e2-fa2b-4903-ae64-eeafdf18ef89"
+  local -a SIDS CWDS
+  local f sid cwd
+  while IFS= read -r f; do
+    [ "${#SIDS[@]}" -ge "$n" ] && break
+    sid=$(basename "$f" .jsonl)
+    [ "$sid" = "$SELF" ] && continue
+    # cwd はセッション transcript から (grep -m1 で先頭の "cwd":"..." を高速抽出)
+    cwd=$(grep -m1 -oE '"cwd":"[^"]+"' "$f" 2>/dev/null | sed 's/^"cwd":"//; s/"$//')
+    [ -n "$cwd" ] && [ -d "$cwd" ] || continue
+    SIDS+=("$sid"); CWDS+=("$cwd")
+  done < <(ls -t "$HOME"/.claude/projects/*/*.jsonl 2>/dev/null)
+
+  local total=${#SIDS[@]}
+  [ "$total" -ge 1 ] || { echo "grid: 対象セッションが見つかりません (~/.claude/projects/*/*.jsonl)" >&2; exit 1; }
+
   workspace Grid
-  local cc="$CLAUDE -c"    # 各ペインでそのディレクトリの最新セッションを継続
-
-  # --- 上段(左→右) 4 個 ---
-  local A1="web-prog|Projects/wevox/wevox-mono-web/web-progressive"
-  local A2="wevox|Projects/wevox"
-  local A3="rest-bff|Projects/wevox/wevox-rest-bff"
-  local A4="front|Projects/wevox/wevox-front"
-  # --- 下段(左→右) 4 個 ---
-  local B1="atrae-ui|Projects/atrae-ui"
-  local B2="usketch|Projects/usketch"
-  local B3="russell|Projects/russell"
-  local B4="dotfiles|dotfiles"
-
-  local a bot a_2 a_3 a_4 b_2 b_3 b_4
-  # まず 2 行に分割（a=上段の最初のペイン, bot=下段）
-  a=$(  tab   "${A1%%|*}" "${A1#*|}" $cc)
-  bot=$(below "$a"        "${B1#*|}" $cc); herdr pane rename "$bot" "${B1%%|*}" >/dev/null 2>&1 || true
-
-  # 上段を均等4列に（バランス分割 → 見た目 左→右 = A1 A2 A3 A4）
-  a_3=$(right "$a"   "${A3#*|}" $cc); herdr pane rename "$a_3" "${A3%%|*}" >/dev/null 2>&1 || true
-  a_2=$(right "$a"   "${A2#*|}" $cc); herdr pane rename "$a_2" "${A2%%|*}" >/dev/null 2>&1 || true
-  a_4=$(right "$a_3" "${A4#*|}" $cc); herdr pane rename "$a_4" "${A4%%|*}" >/dev/null 2>&1 || true
-
-  # 下段を均等4列に（左→右 = B1 B2 B3 B4）
-  b_3=$(right "$bot" "${B3#*|}" $cc); herdr pane rename "$b_3" "${B3%%|*}" >/dev/null 2>&1 || true
-  b_2=$(right "$bot" "${B2#*|}" $cc); herdr pane rename "$b_2" "${B2%%|*}" >/dev/null 2>&1 || true
-  b_4=$(right "$b_3" "${B4#*|}" $cc); herdr pane rename "$b_4" "${B4%%|*}" >/dev/null 2>&1 || true
+  local COLS="${GRID_COLS:-4}"
+  local i col=0 rowstart="" prev="" pane cmd label
+  for ((i = 0; i < total; i++)); do
+    cmd="$CLAUDE --resume ${SIDS[$i]}"
+    label=$(basename "${CWDS[$i]}")
+    if [ "$i" -eq 0 ]; then
+      pane=$(g_tab "$label" "${CWDS[$i]}" $cmd)
+      rowstart="$pane"; prev="$pane"; col=1
+    elif [ "$col" -ge "$COLS" ]; then
+      pane=$(g_split down "$rowstart" "$label" "${CWDS[$i]}" $cmd)   # 新しい行
+      rowstart="$pane"; prev="$pane"; col=1
+    else
+      pane=$(g_split right "$prev" "$label" "${CWDS[$i]}" $cmd)      # 同じ行の右へ
+      prev="$pane"; col=$((col + 1))
+    fi
+  done
+  echo "grid: $total セッションを ${COLS}列グリッドに配置（各ペインで Enter → resume）"
 }
 
 case "$layout" in
   work)    build_work ;;
   cockpit) build_cockpit ;;
-  grid)    build_grid ;;
+  grid)    build_grid "${2:-}" ;;
 esac
 
 # Drop the empty tab herdr created with the workspace.
