@@ -2,7 +2,7 @@
 # Build a herdr workspace from scratch — the replacement for the old zellij KDL
 # layouts (work.kdl / cockpit.kdl).
 #
-# usage: herdr-bootstrap <work|cockpit>
+# usage: herdr-bootstrap <work|cockpit|grid>
 #
 # Why a script and not a config file: herdr has no declarative layout format.
 # A running herdr server keeps workspaces/tabs/panes itself and restores them
@@ -16,8 +16,8 @@ set -euo pipefail
 
 layout="${1:-}"
 case "$layout" in
-  work|cockpit) ;;
-  *) echo "usage: $(basename "$0") <work|cockpit>" >&2; exit 64 ;;
+  work|cockpit|grid) ;;
+  *) echo "usage: $(basename "$0") <work|cockpit|grid>" >&2; exit 64 ;;
 esac
 
 if ! herdr tab list >/dev/null 2>&1; then
@@ -67,6 +67,23 @@ below() {
   pane=$(printf '%s' "$out" | jq -r '.result.pane.pane_id')
   if [ -z "$pane" ] || [ "$pane" = null ]; then
     echo "bootstrap: pane split failed under $target: $out" >&2
+    exit 70
+  fi
+  if [ "$#" -gt 0 ]; then
+    herdr pane send-text "$pane" "$*" >/dev/null
+  fi
+  printf '%s' "$pane"
+}
+
+# right <target-pane> <cwd-relative-to-HOME> [command...] → prints the new pane id.
+# below の横方向版（split-right）。grid を組むのに使う。
+right() {
+  local target="$1" rel="$2"; shift 2
+  local out pane
+  out=$(herdr pane split --pane "$target" --direction right --cwd "$HOME/$rel" --no-focus)
+  pane=$(printf '%s' "$out" | jq -r '.result.pane.pane_id')
+  if [ -z "$pane" ] || [ "$pane" = null ]; then
+    echo "bootstrap: pane split (right) failed under $target: $out" >&2
     exit 70
   fi
   if [ "$#" -gt 0 ]; then
@@ -129,9 +146,44 @@ build_cockpit() {
   below "$p" "dotfiles" >/dev/null
 }
 
+# grid: 1 タブに「よく見る8個」を 4列×2行の均等グリッドで並べる（cockpit を一望する用）。
+# 各ペインは cd 済み・コマンド入力済みで未実行（Enter で起動する）。
+# ★「よく見る8個」はこの LIST を編集する: "ラベル|HOME からの相対パス"、上段4→下段4 の順。
+build_grid() {
+  workspace Grid
+  local cc="$CLAUDE -c"    # 各ペインでそのディレクトリの最新セッションを継続
+
+  # --- 上段(左→右) 4 個 ---
+  local A1="web-prog|Projects/wevox/wevox-mono-web/web-progressive"
+  local A2="wevox|Projects/wevox"
+  local A3="rest-bff|Projects/wevox/wevox-rest-bff"
+  local A4="front|Projects/wevox/wevox-front"
+  # --- 下段(左→右) 4 個 ---
+  local B1="atrae-ui|Projects/atrae-ui"
+  local B2="usketch|Projects/usketch"
+  local B3="russell|Projects/russell"
+  local B4="dotfiles|dotfiles"
+
+  local a bot a_2 a_3 a_4 b_2 b_3 b_4
+  # まず 2 行に分割（a=上段の最初のペイン, bot=下段）
+  a=$(  tab   "${A1%%|*}" "${A1#*|}" $cc)
+  bot=$(below "$a"        "${B1#*|}" $cc); herdr pane rename "$bot" "${B1%%|*}" >/dev/null 2>&1 || true
+
+  # 上段を均等4列に（バランス分割 → 見た目 左→右 = A1 A2 A3 A4）
+  a_3=$(right "$a"   "${A3#*|}" $cc); herdr pane rename "$a_3" "${A3%%|*}" >/dev/null 2>&1 || true
+  a_2=$(right "$a"   "${A2#*|}" $cc); herdr pane rename "$a_2" "${A2%%|*}" >/dev/null 2>&1 || true
+  a_4=$(right "$a_3" "${A4#*|}" $cc); herdr pane rename "$a_4" "${A4%%|*}" >/dev/null 2>&1 || true
+
+  # 下段を均等4列に（左→右 = B1 B2 B3 B4）
+  b_3=$(right "$bot" "${B3#*|}" $cc); herdr pane rename "$b_3" "${B3%%|*}" >/dev/null 2>&1 || true
+  b_2=$(right "$bot" "${B2#*|}" $cc); herdr pane rename "$b_2" "${B2%%|*}" >/dev/null 2>&1 || true
+  b_4=$(right "$b_3" "${B4#*|}" $cc); herdr pane rename "$b_4" "${B4%%|*}" >/dev/null 2>&1 || true
+}
+
 case "$layout" in
   work)    build_work ;;
   cockpit) build_cockpit ;;
+  grid)    build_grid ;;
 esac
 
 # Drop the empty tab herdr created with the workspace.
