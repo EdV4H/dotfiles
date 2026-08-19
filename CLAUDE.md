@@ -150,7 +150,10 @@ zellij から移行済み。 スクリプトから触るときの要点だけ:
   Enter を送りたくない (旧 `start_suspended` 相当) なら `pane send-text`。
 - **タブ/ペインはコマンドが終了しても消えない** (`--close-on-exit` 相当が無い)。 後片付けは明示的に。
 - socket は `~/.config/herdr/[sessions/<name>/]herdr.sock` の固定パス。 `$TMPDIR` に依存しないので
-  launchd からも Claude Code の Bash サンドボックスからも同じサーバーに届く。
+  **launchd から起動されるスクリプト** (gh-review-watcher / pr-conflict-check 等) は同じサーバーに届く。
+  **ただし Claude Code の Bash からは届かない**: herdr はサンドボックス例外から外れ、 socket 接続が
+  EPERM で塞がれた (2026-08-19 実測)。 Claude が herdr を触るときは `~/.claude/scripts/` 配下の
+  hatch 経由 (dev サーバーは `dev-ctl`) にする。 → サンドボックスの項を見よ。
 
 専用ヘルパー (使えるなら必ずこっちを優先):
 
@@ -166,26 +169,33 @@ zellij から移行済み。 スクリプトから触るときの要点だけ:
 
 会社端末の Claude Code は Bash コマンドを OS 層のサンドボックス内で実行する (managed hook
 `/Library/Application Support/ClaudeCode/`)。セッション冒頭の `<sandbox-note>` が最新の正。
-**設定は時期により変わる** (2026-08 に数回変更あり)。以下は 2026-08-17 時点の要点。
+**設定は時期により変わる** (2026-08 に数回変更あり)。以下は 2026-08-19 時点の要点。
 
 ### 何が塞がれる / 何が例外か
 - **塞がれる**: unix ソケット接続 (nix daemon 等)、Mach IPC (pbcopy/pbpaste)、TCP listen、
   **localhost の bind も connect も** (127.0.0.1 への直 curl/python は EPERM)、許可外ホスト通信、
   ワークスペース・`/tmp/claude`・`$TMPDIR` **以外への書込**。
-- **例外 (サンドボックス外で走る)**: **行頭が** `git` / `gh` / `gcloud` / `bq` / `crit` / **`herdr`** 等の
+- **例外 (サンドボックス外で走る)**: **行頭が** `git` / `gh` / `gcloud` / `bq` / `crit` 等の
   許可コマンド、または `~/.claude/scripts/` 配下のスクリプトを**パス直接指定**で実行したとき。
-  判定はコマンド文字列のパターン一致。**`bash script.sh` で包む・`&&`連結・パイプ・for/while に
+  判定はコマンド文字列のパターン一致。
+  (**`herdr` は以前は例外だったが 2026-08-19 時点で外れている** — bare `herdr …` は socket EPERM。
+  最新の正はセッション冒頭の `<sandbox-note>`。 例外リストは時期で変わるので herdr が再び入る可能性もある。)**`bash script.sh` で包む・`&&`連結・パイプ・for/while に
   入れると例外が外れてサンドボックス内に落ちる**ので、許可コマンドは行頭の単発で打つ
   (作業ディレクトリは `cd &&` でなく Bash ツールの実行ディレクトリ指定で合わせる)。
-- **herdr は例外に入っている** → `herdr` / `dev-up` / `dev-down` 等が Claude から直接叩ける。
-  (socket が塞がれていた時期用に `~/.claude/scripts/dev-ctl` という抜け道ラッパも用意済み。無害な保険)
+- **herdr の socket は Claude の Bash から塞がれている** → 素の `herdr` / `dev-up` / `dev-down` /
+  `herdr-tab-id` 等は EPERM で失敗する (`dev-up` は preflight の `herdr tab list` で exit 69)。
+  **dev サーバーは `~/.claude/scripts/dev-ctl {up|down|logs|list}` 経由で叩く** (scripts 例外で
+  サンドボックス外＝socket に届く。 実測で up→down 成功)。 `dev-list` は socket 不使用だが `kill -0` が
+  EPERM られ生きてるサーバも "dead" と誤表示するので、 状態確認も `dev-ctl list` を使う。
+  (launchd から起動される herdr スクリプト群はサンドボックス外なので従来どおり動く。)
 
 ### localhost サーバと話す
 `~/.claude/scripts/lo-fetch <port> [path] [method]` を使う (127.0.0.1 固定の正規中継)。
 自分でサーバを bind したり直接 localhost に curl しない。サーバは人間がターミナルで起動する。
 
 ### git worktree での作業
-- **作成・一覧は可** (`git worktree` / `herdr worktree` とも例外)。
+- **作成・一覧は可** (`git worktree` は例外なので使える。 `herdr worktree` は socket 経由なので
+  Claude の Bash からは今は塞がれている)。
 - ただし**書込許可ルートは Bash ツールの作業ディレクトリに固定**され、コマンド内 `cd` では移らない。
   → **worktree の中で type-check/lint/build すると EPERM で死ぬ** (書込ルート外だから)。
 - **中で作業できる worktree は次のいずれか**:
