@@ -1,7 +1,7 @@
 ---
 name: dev-server
-version: 1.0.0
-description: "Start / inspect / stop long-running dev servers (Vite, pnpm dev, Next, etc.) inside a herdr pane or tab so they survive. Use this INSTEAD of `!`-backgrounding or run_in_background for any process that must keep running — the Claude Code harness reaps those with SIGTERM (exit 143) after ~20min. Commands: dev-up / dev-logs / dev-down / dev-list."
+version: 1.1.0
+description: "Start / inspect / stop long-running dev servers (Vite, pnpm dev, Next, etc.) inside a herdr pane or tab so they survive. Use this INSTEAD of `!`-backgrounding or run_in_background for any process that must keep running — the Claude Code harness reaps those with SIGTERM (exit 143) after ~20min. Commands: dev-up / dev-logs / dev-down / dev-list. NOTE for Claude: the herdr socket is blocked in the Bash sandbox, so drive dev servers via `~/.claude/scripts/dev-ctl {up|down|logs|list}` (bare dev-up/dev-down fail with EPERM)."
 ---
 
 # dev-server
@@ -27,7 +27,15 @@ Code ハーネスのプロセスツリーから外れるので **SIGTERM(143) �
 ## コマンド
 
 前提: **herdr サーバーが動いていること**。socket は `~/.config/herdr/` 配下の固定パス
-なので、Claude の Bash サンドボックスからでも同じサーバーに届く（`$TMPDIR` に依存しない）。
+（`$TMPDIR` に依存しない）。launchd や実シェルからは同じサーバーに届くが、
+**Claude の Bash サンドボックスからは herdr socket が塞がれている**（2026-08-19 実測。
+以前は例外だったが外れた）。
+
+> [!IMPORTANT]
+> **Claude が起動・停止・監視を叩くときは、素の `dev-up`/`dev-down`/`dev-supervise` ではなく
+> 末尾「サンドボックスからの実行について」の `~/.claude/scripts/dev-ctl` 経由**にすること
+> （素の herdr 系は socket EPERM で失敗する）。以下の素コマンドの例は**実シェル（herdr ペイン）向け**。
+
 起動・停止はどちらもペイン/タブ ID 指定なので focus 奪取や誤爆は起きない。
 
 ### 起動
