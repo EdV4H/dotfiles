@@ -46,8 +46,15 @@ else
   CI_LINE="— (status check なし)"
 fi
 
+# Step 1+2 を関数化: [r] で丸ごと再実行してレビューをやり直せる。
+# REVIEW_RESULT はグローバルのまま（後段の [c]/[d] が参照する）。
+run_review() {
 # Step 1: claude -p でレビュー実行、結果を $REVIEW_RESULT に保存 (生データは後段の [c] でも使う)
-REVIEW_RESULT=$(claude --dangerously-skip-permissions -p "/review ${URL}" 2>&1)
+REVIEW_RESULT=$(claude --dangerously-skip-permissions -p "/review ${URL}" 2>&1 || true)
+if [[ -z "${REVIEW_RESULT// }" ]]; then
+  echo "⚠️  レビュー生成に失敗しました（claude が空応答）。[r] でやり直せます。"
+  return 1
+fi
 
 # Step 2: $REVIEW_RESULT を固定テンプレートに再整形 (タブで一貫した5セクション構造で見るため)
 REFORMAT_PROMPT="以下は PR #${NUMBER} (${REPO}) に対するコードレビュー結果です。
@@ -130,6 +137,10 @@ else
   echo "$FORMATTED_RESULT"
 fi
 echo ""
+}
+
+# 初回レビュー生成（失敗してもメニューは出す。[r] でやり直せる）
+run_review || true
 
 # Step 2.5: CI が失敗しているなら自動で request-changes を送る。
 # gh-review-watcher 経由でタブが開くたびに走るので、既に自分の CHANGES_REQUESTED が
@@ -164,45 +175,44 @@ fi
 REVIEW_TAB_ID=$(herdr-tab-id "Review: ${REPO}#${NUMBER}" 2>/dev/null || true)
 [ -n "$REVIEW_TAB_ID" ] && herdr tab focus "$REVIEW_TAB_ID" >/dev/null 2>&1 || true
 
-# Step 2: 選択肢を提示（メニューはループ。API 失敗時は abort せずメニューに戻り、[r] で
-# 直前アクションを再試行できる。アクション実行中は set -e を止め、各 API 呼び出しの
-# 失敗を明示チェックして「失敗→メニューへ戻す／成功→exit 0(=タブ close)」に振り分ける）
+# 選択肢を提示（メニューはループ）。API 失敗時は abort せずメニューに戻る:
+#   - approve/comment が失敗したら「もう一度同じキー」で再実行できる（冪等な再送）。
+#   - [r] はレビュー生成（claude /review + 再整形）を丸ごとやり直す（内容が空/変なとき用）。
+# アクション実行中は set -e を止め、各 API 呼び出しの失敗を明示チェックして
+# 「失敗→メニューへ戻す／成功→exit 0(=タブ close)」に振り分ける。
 set +e
-LAST_ACTION=""
 while true; do
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  [a] Approve this PR"
 echo "  [c] Comment concerns as pending review (open in browser)"
 echo "  [d] Discuss with Claude Code"
 echo "  [o] Open in browser"
-echo "  [r] Retry last action (API 落ち等のリトライ用)"
+echo "  [r] Re-review (レビューをもう一度生成し直す)"
 echo "  [q] Quit"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 read -r -p "Choose action: " choice
 
-# [r] は直前に実行したアクションを再実行する
+# [r] はレビュー生成（claude /review + 再整形）を丸ごとやり直す
 if [ "$choice" = "r" ]; then
-  if [ -z "$LAST_ACTION" ]; then echo "↻ 直前のアクションがありません。"; continue; fi
-  echo "↻ retrying: [$LAST_ACTION]"
-  choice="$LAST_ACTION"
+  echo "↻ レビューを再生成します..."
+  run_review || true
+  continue
 fi
 
 case "$choice" in
   a)
-    LAST_ACTION=a
     if gh pr review "$NUMBER" -R "$REPO" --approve --body "LGTM 👍 (Reviewed by Claude Code)"; then
       echo "✅ Approved!"
       exit 0
     fi
-    echo "❌ approve に失敗しました(API 等)。[r] で再試行できます。"
+    echo "❌ approve に失敗しました(API 等)。もう一度 [a] を押してください。"
     ;;
   c)
-    LAST_ACTION=c
     echo "🤖 Extracting concerns as inline comments..."
     OWNER="${REPO%/*}"
     REPO_NAME="${REPO#*/}"
-    COMMIT_ID=$(gh pr view "$NUMBER" -R "$REPO" --json headRefOid -q '.headRefOid') || { echo "❌ commit-id 取得に失敗(API)。[r] で再試行できます。"; continue; }
-    DIFF=$(gh pr diff "$NUMBER" -R "$REPO") || { echo "❌ diff 取得に失敗(API)。[r] で再試行できます。"; continue; }
+    COMMIT_ID=$(gh pr view "$NUMBER" -R "$REPO" --json headRefOid -q '.headRefOid') || { echo "❌ commit-id 取得に失敗(API)。もう一度 [c] を押してください。"; continue; }
+    DIFF=$(gh pr diff "$NUMBER" -R "$REPO") || { echo "❌ diff 取得に失敗(API)。もう一度 [c] を押してください。"; continue; }
 
     # diffをパースして各行に絶対行番号を付与（Claudeが行番号を計算する必要をなくす）
     # +行とコンテキスト行（スペース始まり）の両方にアノテーションを付ける
@@ -252,7 +262,7 @@ case "$choice" in
 ${ANNOTATED_DIFF}
 
 --- REVIEW ---
-${REVIEW_RESULT}") || { echo "❌ Claude での抽出に失敗。[r] で再試行できます。"; continue; }
+${REVIEW_RESULT}") || { echo "❌ Claude での抽出に失敗。もう一度 [c] を押してください。"; continue; }
 
     # 余計な装飾を除去
     COMMENTS_JSON=$(echo "$COMMENTS_JSON" | sed -n '/^\[/,/^\]/p')
@@ -270,7 +280,7 @@ ${REVIEW_RESULT}") || { echo "❌ Claude での抽出に失敗。[r] で再試�
 
     if ! echo "$PAYLOAD" | gh api "repos/${OWNER}/${REPO_NAME}/pulls/${NUMBER}/reviews" \
       --method POST --input - > /dev/null; then
-      echo "❌ コメント投稿に失敗しました(API 等)。[r] で再試行できます。"
+      echo "❌ コメント投稿に失敗しました(API 等)。もう一度 [c] を押してください。"
       continue
     fi
 
@@ -287,7 +297,6 @@ ${REVIEW_RESULT}") || { echo "❌ Claude での抽出に失敗。[r] で再試�
 ${REVIEW_RESULT}"
     ;;
   o)
-    LAST_ACTION=o
     open "$URL"
     ;;
   q)
