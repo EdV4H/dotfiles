@@ -61,8 +61,16 @@ in
       inputs.port-patrol.packages.${pkgs.system}.default
     ];
 
+    # ここに置いてよいのは「このマシンで常に真である値」だけ。
+    # プロジェクトごとに変わりうる名前の変数を置くと、プロジェクト側の .env を
+    # 黙って上書きする (Node の --env-file は既存の環境変数を優先するため、
+    # .env の値がエラーも警告も無く無視される)。
+    # 実例: GOOGLE_CLOUD_PROJECT をここに置いていたため wevox-ai-agent の
+    # .env (wevox-data-science) が効かず、Vertex AI が 403 を返し続けた。
+    # 「権限が無い」という顔をして出るので切り分けが極めて困難だった。
+    # GCP プロジェクトは使うときにコマンド前置きで渡すこと:
+    #   GOOGLE_CLOUD_PROJECT=<id> <command>
     sessionVariables = {
-      GOOGLE_CLOUD_PROJECT = "atrae-engineer-gu7335mbf";
       GOENV_ROOT = "$HOME/.goenv";
       CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = "65";
     };
