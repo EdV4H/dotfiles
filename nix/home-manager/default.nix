@@ -49,6 +49,7 @@ in
       bat
       fd
       ffmpeg
+      fontforge
       direnv
       uv
       awscli2
