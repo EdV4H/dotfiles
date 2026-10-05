@@ -17,6 +17,12 @@ if [ -z "$REPO" ] || [ -z "$NUM" ]; then
   exit 2
 fi
 
+# herdr-tab-id は「届かない」も「無い」も空で返すので、 preflight しないと
+# サーバー断絶時に "tab not found" と言って exit 0 してしまう。
+preflight_bin="${HERDR_PREFLIGHT:-$HOME/.local/bin/herdr-preflight}"
+[ -x "$preflight_bin" ] || preflight_bin=herdr-preflight
+"$preflight_bin" close-conflict-tab || exit $?
+
 TAB_NAME="Conflict: ${REPO}#${NUM}"
 
 TAB_ID=$(herdr-tab-id "$TAB_NAME" || true)

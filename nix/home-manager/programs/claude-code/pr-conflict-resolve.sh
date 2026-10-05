@@ -174,6 +174,18 @@ open_human_tab() {
   local handoff_reason="$2"
   local TAB="Conflict: $REPO#$NUM"
 
+  # herdr_session() は「サーバーに届かない」も「セッションが無い」も同じ空文字に
+  # 潰してしまうので、 先に理由を確定させる。 launchd 経由なので stderr は消える →
+  # 診断は log() でこのスクリプトのログに残す。
+  local preflight_bin pf_err
+  preflight_bin="${HERDR_PREFLIGHT:-$HOME/.local/bin/herdr-preflight}"
+  [ -x "$preflight_bin" ] || preflight_bin=herdr-preflight
+  if ! pf_err=$("$preflight_bin" pr-conflict-resolve 2>&1); then
+    while IFS= read -r l; do log "  $l"; done <<< "$pf_err"
+    log "  human handoff details: work_dir=$work_dir reason=$handoff_reason"
+    return
+  fi
+
   local session
   if ! session=$(herdr_session); then
     log "  ERROR: no running herdr session, cannot open tab"

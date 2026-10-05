@@ -52,14 +52,14 @@ case "$name" in
   *[!A-Za-z0-9._-]*) echo "dev-up: name may only contain [A-Za-z0-9._-]" >&2; exit 64 ;;
 esac
 
-# Preflight: can we reach the herdr server at all? Unlike zellij there is no
-# $TMPDIR trap here — the socket lives at a fixed path (~/.config/herdr/…) and
-# panes also get $HERDR_SOCKET_PATH — so a sandboxed shell reaches the same
-# server as your real one. A failure here means no server is running.
-if ! herdr tab list >/dev/null 2>&1; then
-  echo "dev-up: can't reach a herdr server. Start one with \`herdr\` first." >&2
-  exit 69
-fi
+# Preflight: can we reach the herdr server at all? Delegated to herdr-preflight,
+# which tells "no server" apart from "a server is running but this CLI is a
+# different version" — the second case looked exactly like the first for three
+# days in 2026-09 and sent every dev-up (and every gh-review-watcher tab hook)
+# into a wrong-advice dead end. See that script's header for the whole story.
+preflight_bin="${HERDR_PREFLIGHT:-$HOME/.local/bin/herdr-preflight}"
+[ -x "$preflight_bin" ] || preflight_bin=herdr-preflight
+"$preflight_bin" dev-up || exit $?
 
 # --split needs a pane to split, which means running from inside herdr.
 if [ "$place" = split ] && [ -z "${HERDR_PANE_ID:-}" ]; then

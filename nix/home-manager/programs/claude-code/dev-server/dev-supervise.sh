@@ -34,7 +34,17 @@ fi
 echo "$$" > "$lock"
 trap 'rm -f "$lock"' EXIT
 
-herdr tab list >/dev/null 2>&1 || log "WARNING: no reachable herdr server — dev-up restarts will fail"
+# A watchdog must not die just because herdr is unreachable right now — the
+# server may come back and we want to be here when it does. So: diagnose loudly
+# into the log, then keep looping. herdr-preflight distinguishes "no server" from
+# "a server is running but this CLI is a different version"; the latter is the
+# one that wasted three days in 2026-09 (see herdr-preflight's header).
+preflight_bin="${HERDR_PREFLIGHT:-$HOME/.local/bin/herdr-preflight}"
+[ -x "$preflight_bin" ] || preflight_bin=herdr-preflight
+if ! PF_ERR=$("$preflight_bin" dev-supervise 2>&1); then
+  while IFS= read -r l; do log "WARNING: $l"; done <<< "$PF_ERR"
+  log "WARNING: dev-up restarts will fail until that is fixed; still watching"
+fi
 
 log "dev-supervise start (interval=${interval}s, dir=$statedir)"
 while true; do

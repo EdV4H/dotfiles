@@ -21,6 +21,18 @@ if [ -z "$URL" ] || [ -z "$NUMBER" ] || [ -z "$REPO" ]; then
   exit 2
 fi
 
+# herdr に届かないなら、 理由ごと記録して止まる。 launchd 経由で走るので stderr は
+# 誰も見ない → hooks ログに残すのが唯一の手掛かり。 ここを素通りさせると
+# `herdr tab create` が黙って失敗し、 レビュータブが開かない理由が分からなくなる
+# (2026-09-11〜14 に実際に起きた: CLI だけ 0.9.0 になり 0.8.x サーバーと断絶)。
+HOOK_LOG="${GH_REVIEW_WATCHER_LOG:-/tmp/gh-review-watcher-hooks.log}"
+preflight_bin="${HERDR_PREFLIGHT:-$HOME/.local/bin/herdr-preflight}"
+[ -x "$preflight_bin" ] || preflight_bin=herdr-preflight
+if ! PF_ERR=$("$preflight_bin" open-review-tab 2>&1); then
+  printf '%s\n' "$PF_ERR" | tee -a "$HOOK_LOG" >&2
+  exit 69
+fi
+
 TAB_NAME="Review: ${REPO}#${NUMBER}"
 
 # 同名タブが既にあれば focus するだけ（herdr-tab-id は全 workspace を横断して探す）。

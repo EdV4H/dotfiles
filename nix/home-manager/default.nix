@@ -259,6 +259,15 @@ in
     recursive = true;
   };
 
+  # herdr サーバーに届くかの事前チェック。 「サーバーが無い」と「サーバーはいるが
+  # CLI とバージョンが違う」を区別する (2026-09 に後者で 3 日間サイレント故障した)。
+  # dev-up / dev-supervise / herdr-bootstrap / open-review-tab /
+  # close-merged-review-tab / close-conflict-tab が使う。
+  home.file.".local/bin/herdr-preflight" = {
+    source = ./programs/herdr/herdr-preflight.sh;
+    executable = true;
+  };
+
   # herdr のタブを label で引くヘルパー (close-*-tab / review-pr / pr-conflict-resolve が使う)
   home.file.".local/bin/herdr-tab-id" = {
     source = ./programs/herdr/herdr-tab-id.sh;

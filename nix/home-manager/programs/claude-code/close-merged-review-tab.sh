@@ -9,6 +9,18 @@ set -euo pipefail
 NUMBER="$1"
 REPO="$2"
 
+HOOK_LOG="${GH_REVIEW_WATCHER_LOG:-/tmp/gh-review-watcher-hooks.log}"
+
+# herdr に届かないときに素通りさせない。 herdr-tab-id は「サーバーに届かない」と
+# 「そんなタブは無い」をどちらも空文字で返すので、 preflight しないとこのスクリプトは
+# exit 0 (= 片付け済み) を装ってしまう。 タブは閉じられないまま溜まり続ける。
+preflight_bin="${HERDR_PREFLIGHT:-$HOME/.local/bin/herdr-preflight}"
+[ -x "$preflight_bin" ] || preflight_bin=herdr-preflight
+if ! PF_ERR=$("$preflight_bin" close-merged-review-tab 2>&1); then
+  printf '%s\n' "$PF_ERR" | tee -a "$HOOK_LOG" >&2
+  exit 69
+fi
+
 TAB_NAME="Review: ${REPO}#${NUMBER}"
 
 # レビュータブが存在しなければ何もしない
