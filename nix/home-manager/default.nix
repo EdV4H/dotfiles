@@ -246,7 +246,17 @@ in
   # herdr 設定。 レイアウトは herdr に宣言ファイル (旧 zellij の KDL 相当) が無く、
   # 永続セッションが構成を保持する設計なので、 作り直し用に bootstrap スクリプトを置く。
   xdg.configFile."herdr/config.toml" = {
-    source = ./programs/herdr/config.toml;
+    # 通知音のパスは絶対パスで埋め込む (相対だと nix store 側を見に行くため)。
+    text = builtins.replaceStrings [ "@SOUNDS@" ] [ "${config.xdg.configHome}/herdr/sounds" ] (
+      builtins.readFile ./programs/herdr/config.toml
+    );
+  };
+
+  # herdr の通知音 (システム音を -12dB にした mp3)。 herdr 側に音量設定が無いので
+  # 音量は mp3 側で作り込む。
+  xdg.configFile."herdr/sounds" = {
+    source = ./programs/herdr/sounds;
+    recursive = true;
   };
 
   # herdr のタブを label で引くヘルパー (close-*-tab / review-pr / pr-conflict-resolve が使う)
