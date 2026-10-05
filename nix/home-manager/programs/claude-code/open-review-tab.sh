@@ -46,7 +46,10 @@ WSOPT=()
 [ -n "$WSID" ] && WSOPT=(--workspace "$WSID")
 
 # --no-focus: レビュー依頼が飛んできても作業中のタブを奪わない。
-CREATED=$(herdr tab create "${WSOPT[@]}" --label "$TAB_NAME" --no-focus)
+# --cwd を明示する。herdr の new_cwd="follow" は「source pane/workspace を継ぐ」ため、
+# 指定しないとレビュータブがその時フォーカスしていたペインの cwd (別リポジトリの worktree 等)
+# を拾う。review-pr は PR を URL で指定して動くので cwd に依存してはいけない。
+CREATED=$(herdr tab create "${WSOPT[@]}" --label "$TAB_NAME" --cwd "$HOME" --no-focus)
 TAB_ID=$(printf '%s' "$CREATED" | jq -r '.result.tab.tab_id // empty')
 PANE_ID=$(printf '%s' "$CREATED" | jq -r '.result.root_pane.pane_id // empty')
 
