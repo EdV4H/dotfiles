@@ -2,9 +2,11 @@
 # Build a herdr workspace from scratch — the replacement for the old zellij KDL
 # layouts (work.kdl / cockpit.kdl).
 #
-# usage: herdr-bootstrap <work|cockpit|grid [ROWS] [COLS]>
+# usage: herdr-bootstrap <work|cockpit|grid [ROWS] [COLS] [--empty]>
 #   grid [ROWS] [COLS]: 直近アクティブな ROWS×COLS 個(既定 2×4=8)のセッションを
 #                       1タブのグリッド(ROWS行 × COLS列)に resume で並べる
+#   grid ... --empty  : セッションを一切拾わず、空の ROWS×COLS グリッドだけ作る
+#                       (ペインに何も入力しない / cwd は $HOME)。--no-resume も同義。
 #
 # Why a script and not a config file: herdr has no declarative layout format.
 # A running herdr server keeps workspaces/tabs/panes itself and restores them
@@ -19,13 +21,29 @@ set -euo pipefail
 layout="${1:-}"
 case "$layout" in
   work|cockpit|grid) ;;
-  *) echo "usage: $(basename "$0") <work|cockpit|grid>" >&2; exit 64 ;;
+  *) echo "usage: $(basename "$0") <work|cockpit|grid [ROWS] [COLS] [--empty]>" >&2; exit 64 ;;
 esac
+shift || true
 
-if ! herdr tab list >/dev/null 2>&1; then
-  echo "herdr-bootstrap: no reachable herdr server. Start one with \`herdr\` first." >&2
-  exit 69
-fi
+# grid のオプション。位置引数 (ROWS COLS) とフラグを混在で受ける。
+EMPTY=0
+GRID_ROWS=""
+GRID_COLS=""
+for a in "$@"; do
+  case "$a" in
+    --empty|--no-resume) EMPTY=1 ;;
+    -*) echo "unknown option: $a" >&2; exit 64 ;;
+    *)
+      if [ -z "$GRID_ROWS" ]; then GRID_ROWS="$a"
+      elif [ -z "$GRID_COLS" ]; then GRID_COLS="$a"
+      fi
+      ;;
+  esac
+done
+
+preflight_bin="${HERDR_PREFLIGHT:-$HOME/.local/bin/herdr-preflight}"
+[ -x "$preflight_bin" ] || preflight_bin=herdr-preflight
+"$preflight_bin" herdr-bootstrap || exit $?
 
 CLAUDE="claude"
 
@@ -157,19 +175,55 @@ build_cockpit() {
 # 同じセッションを掴んで競合する。セッションID を明示すれば取り違え・競合しない。
 
 # grid ヘルパー（すべて HOME で split し、割当時に cd で移動する）。
-# 均等サイズにするため「半分ずつ再帰分割(balanced)」する: 行/列が power-of-2(2,4,8…)なら
-# 全ペイン完全に均等。逐次 split(50/25/12.5…) の偏りを避けるのが目的。
 # build_grid の local(SIDS/CWDS/total/cols) は bash の動的スコープで各ヘルパーから見える。
+#
+# 均等サイズの作り方: 「本数を半分ずつ」の再帰で木を組み、 各 split の比率をその枝が
+# 受け持つ本数に比例させる。 以前は木だけ balanced にして split は常に 50/50 だったので、
+# 本数が 2 の冪でないところで必ず崩れた ー 3 行なら 1/2, 1/4, 1/4、 5 行なら
+# 1/4,1/4,1/4,1/8,1/8。 「3行目以降がどんどん小さくなる」のはこれ。 比率を half/k に
+# すれば任意の行数・列数で完全に均等になる (3 → 1/3 で割ってから右を 50/50、 等)。
+#
+# --ratio が「元ペイン(左/上)の取り分」なのか「新ペイン(右/下)の取り分」なのかは、
+# herdr の CLI ヘルプにも同梱 API スキーマ (PaneSplitParams.ratio) にも書かれていない。
+# 推測せず、 使い捨ての split 1 回で実測して決める (grid_calibrate)。
+RATIO_FIRST=1   # 1 = --ratio は「元ペイン(左/上)の取り分」
+
+# 使い捨ての 0.25 split で --ratio の向きを判定し、 プローブは即閉じる。
+# 判定できなければ既定 (RATIO_FIRST=1) のまま進む ー 最悪でも従来と同じ見た目になる。
+grid_calibrate() {  # <pane>
+  local out probe lay w0 w1
+  out=$(herdr pane split --pane "$1" --direction right --ratio 0.25 --cwd "$HOME" --no-focus 2>/dev/null) || return 0
+  probe=$(printf '%s' "$out" | jq -r '.result.pane.pane_id // empty' 2>/dev/null) || return 0
+  [ -n "$probe" ] || return 0
+  # 以降は必ずプローブを閉じてから抜ける。 `set -e` 下では代入の右辺が失敗すると
+  # そこでスクリプトごと落ちるので、 herdr 側が pane layout を持たない世代でも
+  # 死なないよう 1 つずつ握り潰す (判定できなければ既定のまま続行する)。
+  lay=$(herdr pane layout --pane "$1" 2>/dev/null) || lay=""
+  herdr pane close "$probe" >/dev/null 2>&1 || true
+  [ -n "$lay" ] || return 0
+  w0=$(printf '%s' "$lay" | jq -r --arg p "$1"     'first(.result.layout.panes[]? | select(.pane_id == $p) | .rect.width) // empty' 2>/dev/null) || return 0
+  w1=$(printf '%s' "$lay" | jq -r --arg p "$probe" 'first(.result.layout.panes[]? | select(.pane_id == $p) | .rect.width) // empty' 2>/dev/null) || return 0
+  case "${w0}:${w1}" in *[!0-9:]*|:*|*:) return 0 ;; esac
+  if [ "$w0" -lt "$w1" ]; then RATIO_FIRST=1; else RATIO_FIRST=0; fi
+}
+
+# a/b を小数で (bash に浮動小数が無いので awk)
+grid_frac() { awk -v a="$1" -v b="$2" 'BEGIN { printf "%.6f", a / b }'; }
 
 grid_assign() {  # <pane> <session-index> : 名前 + `cd <cwd> && claude --resume <id>` を入力(未実行)
+  # --empty ではペインを空のまま残す (rename も send-text もしない)。
+  [ "$EMPTY" = "1" ] && return 0
   local pane="$1" cwd="${CWDS[$2]}" sid="${SIDS[$2]}"
   herdr pane rename "$pane" "$(basename "$cwd")" >/dev/null 2>&1 || true
   herdr pane send-text "$pane" "cd $(printf '%q' "$cwd") && $CLAUDE --resume $sid" >/dev/null
 }
 
-grid_split1() {  # <right|down> <target-pane> → 新ペイン id (cwd は割当時に cd で合わせる)
-  local out pane
-  out=$(herdr pane split --pane "$2" --direction "$1" --cwd "$HOME" --no-focus)
+# <dir> <target-pane> <元ペインの取り分 0<r<1> → 新ペイン id
+# (cwd は割当時に cd で合わせる)
+grid_split1() {
+  local dir="$1" target="$2" r="$3" out pane
+  [ "$RATIO_FIRST" = 1 ] || r=$(awk -v x="$r" 'BEGIN { printf "%.6f", 1 - x }')
+  out=$(herdr pane split --pane "$target" --direction "$dir" --ratio "$r" --cwd "$HOME" --no-focus)
   pane=$(printf '%s' "$out" | jq -r '.result.pane.pane_id')
   [ -n "$pane" ] && [ "$pane" != null ] || { echo "grid: split failed: $out" >&2; exit 70; }
   printf '%s' "$pane"
@@ -181,7 +235,8 @@ grid_place() {  # <dir> <pane> <ks> <k>
   if [ "$k" -le 1 ]; then grid_assign "$pane" "$ks"; return; fi
   local half=$((k / 2)) rest np
   rest=$((k - half))
-  np=$(grid_split1 "$dir" "$pane")               # pane=前半(左/上), np=後半(右/下)
+  # 前半が受け持つ本数 half に比例した取り分を与える (これが均等分割の肝)
+  np=$(grid_split1 "$dir" "$pane" "$(grid_frac "$half" "$k")")   # pane=前半(左/上), np=後半(右/下)
   grid_place "$dir" "$pane" "$ks"            "$half"
   grid_place "$dir" "$np"   "$((ks + half))" "$rest"
 }
@@ -197,9 +252,24 @@ grid_rows() {  # <pane> <row-start> <nr>
   fi
   local half=$((nr / 2)) rest np
   rest=$((nr - half))
-  np=$(grid_split1 down "$pane")
+  # 行も同じ: 上側が受け持つ「行数」に比例させる。 50/50 で切ると 3 行以降が半分ずつ痩せる。
+  np=$(grid_split1 down "$pane" "$(grid_frac "$half" "$nr")")
   grid_rows "$pane" "$rs"            "$half"
   grid_rows "$np"   "$((rs + half))" "$rest"
+}
+
+# 出来上がりを実測して 1 行で報告する。 均等化はサーバー側のセル丸めと最小ペイン幅に
+# 左右されるので、 「指定どおりになったか」は見えるところに出しておく。
+grid_report() {  # <any pane in the tab>
+  local lay n wmin wmax hmin hmax
+  lay=$(herdr pane layout --pane "$1" 2>/dev/null) || return 0
+  read -r n wmin wmax hmin hmax <<<"$(printf '%s' "$lay" | jq -r '
+      [.result.layout.panes[]?.rect] as $r
+      | if ($r | length) == 0 then empty
+        else "\($r|length) \($r|map(.width)|min) \($r|map(.width)|max) \($r|map(.height)|min) \($r|map(.height)|max)"
+        end' 2>/dev/null)"
+  [ -n "${n:-}" ] || return 0
+  echo "grid: 実測 ${n}ペイン  幅 ${wmin}–${wmax}  高さ ${hmin}–${hmax} (±1 はセル丸め)"
 }
 
 build_grid() {
@@ -209,12 +279,17 @@ build_grid() {
   [ "$rows" -ge 1 ] 2>/dev/null || rows=2
   [ "$cols" -ge 1 ] 2>/dev/null || cols=4
   local n=$((cols * rows))
+  local -a SIDS=() CWDS=()
+  local total
 
+  if [ "$EMPTY" = "1" ]; then
+    # セッションを拾わず、要求された rows×cols をそのまま敷く。
+    total=$n
+  else
   # 直近アクティブな N セッションを .jsonl の mtime 順で拾う（このセッションは除外）。
   local SELF="7990c3e2-fa2b-4903-ae64-eeafdf18ef89"
   # NOTE: カウンタで数える。set -u の bash 3.2 では空配列の ${#arr[@]} が
   # "unbound variable" になるため、${#SIDS[@]} は使わない。
-  local -a SIDS=() CWDS=()
   local f sid cwd count=0
   while IFS= read -r f; do
     [ "$count" -ge "$n" ] && break
@@ -226,8 +301,9 @@ build_grid() {
     SIDS[$count]="$sid"; CWDS[$count]="$cwd"; count=$((count + 1))
   done < <(ls -t "$HOME"/.claude/projects/*/*.jsonl 2>/dev/null)
 
-  local total=$count
+  total=$count
   [ "$total" -ge 1 ] || { echo "grid: 対象セッションが見つかりません (~/.claude/projects/*/*.jsonl)" >&2; exit 1; }
+  fi
 
   workspace Grid
   # 実際に使う行数 = ceil(total/cols)（total は rows*cols で上限済みなので rows 以下）
@@ -240,18 +316,28 @@ build_grid() {
   first=$(printf '%s' "$out" | jq -r '.result.root_pane.pane_id')
   [ -n "$first" ] && [ "$first" != null ] || { echo "grid: tab create failed: $out" >&2; exit 70; }
 
+  [ $((arows * cols)) -gt 1 ] && grid_calibrate "$first"
   grid_rows "$first" 0 "$arows"    # 均等に行→列へ分割してセッションを敷き詰める
-  echo "grid: $total セッションを ${rows}行×${cols}列(均等)グリッドに配置（各ペインで Enter → resume）"
+  grid_report "$first"
+  if [ "$EMPTY" = "1" ]; then
+    echo "grid: 空の ${rows}行×${cols}列(均等)グリッドを作成（コマンドは入れていない / cwd=\$HOME）"
+  else
+    echo "grid: $total セッションを ${rows}行×${cols}列(均等)グリッドに配置（各ペインで Enter → resume）"
+  fi
 }
 
 case "$layout" in
   work)    build_work ;;
   cockpit) build_cockpit ;;
-  grid)    build_grid "${2:-}" "${3:-}" ;;
+  grid)    build_grid "$GRID_ROWS" "$GRID_COLS" ;;
 esac
 
 # Drop the empty tab herdr created with the workspace.
 [ -n "$SEED_TAB" ] && [ "$SEED_TAB" != null ] && herdr tab close "$SEED_TAB" >/dev/null 2>&1 || true
 
 echo "herdr-bootstrap: built '$layout' in workspace $WS_ID"
-echo "  各タブのコマンドは入力済みで未実行。 Enter で起動する。"
+if [ "$EMPTY" = "1" ]; then
+  echo "  ペインは空。 コマンドは入れていない。"
+else
+  echo "  各タブのコマンドは入力済みで未実行。 Enter で起動する。"
+fi
