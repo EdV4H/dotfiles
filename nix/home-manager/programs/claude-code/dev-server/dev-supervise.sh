@@ -7,7 +7,7 @@
 # dev dies with 143). This watchdog loop is itself trivial, so it survives, and it
 # re-launches dead supervised servers via dev-up.
 #
-# Run it ONCE inside your herdr session, in its own tab:
+# Run it ONCE, in its own tab (it lands in the dev-servers session):
 #     dev-up --tab supervisor -- dev-supervise
 # Then start servers with --keep:
 #     dev-up --keep --tab weboard -- pnpm dev:proxy --filter weboard
@@ -34,16 +34,13 @@ fi
 echo "$$" > "$lock"
 trap 'rm -f "$lock"' EXIT
 
-# A watchdog must not die just because herdr is unreachable right now — the
-# server may come back and we want to be here when it does. So: diagnose loudly
-# into the log, then keep looping. herdr-preflight distinguishes "no server" from
-# "a server is running but this CLI is a different version"; the latter is the
-# one that wasted three days in 2026-09 (see herdr-preflight's header).
-preflight_bin="${HERDR_PREFLIGHT:-$HOME/.local/bin/herdr-preflight}"
-[ -x "$preflight_bin" ] || preflight_bin=herdr-preflight
-if ! PF_ERR=$("$preflight_bin" dev-supervise 2>&1); then
+# A watchdog must not die just because zellij is unreachable right now — it may
+# come back and we want to be here when it does. So: diagnose loudly into the log,
+# then keep looping. (`zj preflight` tells "no server" apart from "a server from
+# another zellij version is running", the trap that cost three days with herdr.)
+if ! PF_ERR=$(zj preflight dev-supervise 2>&1); then
   while IFS= read -r l; do log "WARNING: $l"; done <<< "$PF_ERR"
-  log "WARNING: dev-up restarts will fail until that is fixed; still watching"
+  log "WARNING: dev-up restarts may fail until that is fixed; still watching"
 fi
 
 log "dev-supervise start (interval=${interval}s, dir=$statedir)"

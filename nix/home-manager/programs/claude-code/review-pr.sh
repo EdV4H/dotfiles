@@ -237,7 +237,7 @@ run_review() {
   # Step 1: claude -p でレビュー実行。
   # `/review <URL>` は使わない: そんなスラッシュコマンドは存在せず、code-review スキルに
   # 流れて「カレントディレクトリの diff」がレビューされてしまう。レビュータブの cwd は
-  # herdr の new_cwd="follow" 次第で無関係な worktree になりうるため、実測で
+  # 開いた時のフォーカス中ペインの cwd を継いで無関係な worktree になりうるため、実測で
   # 「PR #11478 を頼んだのに atrae-ui の git diff main...HEAD がレビューされる」事故が出た。
   # → 対象をプロンプト内で完結させ、cwd に一切依存しない形にする。
   local REVIEW_PROMPT
@@ -351,9 +351,10 @@ EOF
   fi
 fi
 
-# 分析完了後、このレビュータブにフォーカスを移動
-REVIEW_TAB_ID=$(herdr-tab-id "Review: ${REPO}#${NUMBER}" 2>/dev/null || true)
-[ -n "$REVIEW_TAB_ID" ] && herdr tab focus "$REVIEW_TAB_ID" >/dev/null 2>&1 || true
+# 分析完了後、このレビュータブにフォーカスを移動 (タブ id で。名前で探してセッションも特定する)
+if REVIEW_TAB=$(zj find-tab "Review: ${REPO}#${NUMBER}" 2>/dev/null); then
+  zj -s "${REVIEW_TAB%%$'\t'*}" action go-to-tab-by-id "${REVIEW_TAB##*$'\t'}" >/dev/null 2>&1 || true
+fi
 
 # 選択肢を提示（メニューはループ）。API 失敗時は abort せずメニューに戻る:
 #   - approve/comment が失敗したら「もう一度同じキー」で再実行できる（冪等な再送）。

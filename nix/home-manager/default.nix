@@ -56,7 +56,7 @@ in
       bruno
       mysql84
       lazysql
-      herdr
+      zellij
       inputs.gws.packages.${pkgs.system}.default
       inputs.gh-review-watcher.packages.${pkgs.system}.default
       inputs.port-patrol.packages.${pkgs.system}.default
@@ -133,11 +133,24 @@ in
     executable = true;
   };
 
-  # NOTE: Claude Code の作業状態 (working / idle / blocked) は herdr が
-  # ネイティブに持つ。 `herdr integration install claude` を 1 度実行すると
-  # ~/.claude/settings.json に hook が入り、 サイドバーに状態が出る。
-  # 旧 zellij 構成の claude-zellij / zellij-tab-thinking.sh / zellij-tab-done.sh と
-  # /tmp/zellij-tab-* マーカーはこれで不要になったため削除した。
+  # Claude Code のタブ名に作業状態 (思考中 / 完了) を出す hook。 claude-zellij で起動した
+  # タブだけが対象で、 それ以外 (Claude デスクトップアプリ等) では何もしない。
+  # hook 自体の登録は ~/.claude/settings.json 側 (nix 管理外)。
+  home.file.".claude/hooks/zellij-tab-thinking.sh" = {
+    source = ./programs/claude-code/zellij-tab-thinking.sh;
+    executable = true;
+  };
+
+  home.file.".claude/hooks/zellij-tab-done.sh" = {
+    source = ./programs/claude-code/zellij-tab-done.sh;
+    executable = true;
+  };
+
+  # Claude Code zellij wrapper (claude-zellij command)
+  home.file.".local/bin/claude-zellij" = {
+    source = ./programs/claude-code/claude-zellij.sh;
+    executable = true;
+  };
 
   # Daily report generator script
   home.file.".local/bin/daily-report" = {
@@ -187,7 +200,7 @@ in
     executable = true;
   };
 
-  # dev-server: run long-lived dev servers inside a herdr pane/tab so the
+  # dev-server: run long-lived dev servers inside a zellij tab/pane so the
   # Claude Code harness doesn't reap them with SIGTERM(143). See the
   # dev-server skill. dev-serve-run is the internal in-pane wrapper.
   home.file.".local/bin/dev-serve-run" = {
@@ -214,7 +227,7 @@ in
     source = ./programs/claude-code/dev-server/dev-supervise.sh;
     executable = true;
   };
-  # dev-ctl: sandbox-escape front-end. Claude's Bash sandbox blocks the herdr
+  # dev-ctl: sandbox-escape front-end. Claude's Bash sandbox blocks the zellij
   # socket, so dev-up/dev-down don't work there — but scripts under ~/.claude/scripts/
   # run OUTSIDE the sandbox when invoked by direct path. Claude drives dev servers via
   # `~/.claude/scripts/dev-ctl {up|down|logs|list|supervise}`.
@@ -243,40 +256,18 @@ in
     recursive = true;
   };
 
-  # herdr 設定。 レイアウトは herdr に宣言ファイル (旧 zellij の KDL 相当) が無く、
-  # 永続セッションが構成を保持する設計なので、 作り直し用に bootstrap スクリプトを置く。
-  xdg.configFile."herdr/config.toml" = {
-    # 通知音のパスは絶対パスで埋め込む (相対だと nix store 側を見に行くため)。
-    text = builtins.replaceStrings [ "@SOUNDS@" ] [ "${config.xdg.configHome}/herdr/sounds" ] (
-      builtins.readFile ./programs/herdr/config.toml
-    );
-  };
-
-  # herdr の通知音 (システム音を -12dB にした mp3)。 herdr 側に音量設定が無いので
-  # 音量は mp3 側で作り込む。
-  xdg.configFile."herdr/sounds" = {
-    source = ./programs/herdr/sounds;
+  # Zellij layouts (zellij --layout work / cockpit)
+  xdg.configFile."zellij/layouts" = {
+    source = ./programs/zellij/layouts;
     recursive = true;
   };
 
-  # herdr サーバーに届くかの事前チェック。 「サーバーが無い」と「サーバーはいるが
-  # CLI とバージョンが違う」を区別する (2026-09 に後者で 3 日間サイレント故障した)。
-  # dev-up / dev-supervise / herdr-bootstrap / open-review-tab /
-  # close-merged-review-tab / close-conflict-tab が使う。
-  home.file.".local/bin/herdr-preflight" = {
-    source = ./programs/herdr/herdr-preflight.sh;
-    executable = true;
-  };
-
-  # herdr のタブを label で引くヘルパー (close-*-tab / review-pr / pr-conflict-resolve が使う)
-  home.file.".local/bin/herdr-tab-id" = {
-    source = ./programs/herdr/herdr-tab-id.sh;
-    executable = true;
-  };
-
-  # herdr-bootstrap <work|cockpit>: 旧 zellij KDL レイアウトの作り直し用
-  home.file.".local/bin/herdr-bootstrap" = {
-    source = ./programs/herdr/bootstrap.sh;
+  # zj: どのシェル (launchd / Claude の Bash / ターミナル) からでも同じ zellij サーバーに
+  # 届くよう $TMPDIR を揃え、 セッション選択・タブ検索・事前チェックをまとめたラッパー。
+  # dev-up / dev-down / dev-supervise / open-review-tab / close-*-tab /
+  # review-pr / pr-conflict-resolve が使う。
+  home.file.".local/bin/zj" = {
+    source = ./programs/zellij/zj.sh;
     executable = true;
   };
 
