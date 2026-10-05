@@ -44,6 +44,7 @@
       "logi-options+"
       "amethyst"
       "thebrowsercompany-dia"
+      "firefox"
       "nani"
       "amazon-workspaces"
       "claude"
