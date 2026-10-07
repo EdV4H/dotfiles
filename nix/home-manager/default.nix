@@ -7,7 +7,6 @@
 }:
 let
   username = "yusukemaruyama";
-  pwd = "${config.home.homeDirectory}/dotfiles-nix/home-manager/console/neovim";
 in
 {
   nixpkgs = {
@@ -120,11 +119,6 @@ in
   xdg.configFile."nvim/lua" = {
     source = ./programs/neovim/config/lua;
     recursive = true;
-  };
-
-  # Legacy symlink for backward compatibility
-  xdg.configFile."nvim/lua/conf" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${pwd}/conf";
   };
 
   # Claude Code hooks
