@@ -100,7 +100,11 @@
     #
     # $ZELLIJ は zellij のペインの中でだけ立つのでネスト起動しない。 対話シェルに限るのは、
     # Claude Code (デスクトップアプリ含む) の Bash など非対話シェルで起動させないため。
-    if [[ -z "$ZELLIJ" && -z "$VSCODE_INJECTION" && -o interactive ]]; then
+    # Claude デスクトップアプリの Terminal パネルは対話シェルなのでこの条件をすり抜ける。
+    # Claude がそこへコマンドを打ち込み出力を読むので、 マルチプレクサが挟まると壊れる。
+    # パネルのシェルには TERM_PROGRAM=claude-desktop が立つので、 それで除外する。
+    if [[ -z "$ZELLIJ" && -z "$VSCODE_INJECTION" && -o interactive \
+          && "$TERM_PROGRAM" != claude-desktop ]]; then
       eval "$(zellij setup --generate-auto-start zsh)"
     fi
 
