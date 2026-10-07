@@ -194,6 +194,12 @@ in
     executable = true;
   };
 
+  # Fire the "PRレビュー一次請け" Claude Code routine for a PR (triggered by gh-review-watcher)
+  home.file.".local/bin/fire-review-routine" = {
+    source = ./programs/claude-code/fire-review-routine.sh;
+    executable = true;
+  };
+
   # Close "Conflict: <repo>#<num>" tab (used by pr-conflict-resolve handoff prompt)
   home.file.".local/bin/close-conflict-tab" = {
     source = ./programs/claude-code/close-conflict-tab.sh;
