@@ -70,6 +70,11 @@ in
 
     # Fuzzy finder
     telescope-nvim
+    {
+      plugin = telescope-file-browser-nvim;
+      type = "lua";
+      config = builtins.readFile "${neovimConfigDir}/lua/plugins/telescope-file-browser.lua";
+    }
 
     # Git integration
     {

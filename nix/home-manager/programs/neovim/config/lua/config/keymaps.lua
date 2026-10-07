@@ -6,6 +6,9 @@ local keymap = vim.keymap
 keymap.set({"n", "v"}, ";", ":", { desc = "Command mode" })
 keymap.set({"n", "v"}, ":", ";", { desc = "Repeat last f/F/t/T" })
 
+-- File explorer
+keymap.set("n", "<leader>e", ":Telescope file_browser path=%:p:h select_buffer=true hidden=true respect_gitignore=false<CR>", { desc = "File browser (current dir)" })
+
 -- Telescope
 keymap.set("n", "<leader>ff", ":Telescope find_files<CR>", { desc = "Find files" })
 keymap.set("n", "<leader>fg", ":Telescope live_grep<CR>", { desc = "Live grep" })
