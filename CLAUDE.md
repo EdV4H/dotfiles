@@ -165,6 +165,8 @@ When compacting, preserve the following:
 - `close-conflict-tab <repo> <num>` → `Conflict: <repo>#<num>` タブを閉じる (pr-conflict-check 用)
 - `close-merged-review-tab <num> <repo>` → `Review: <repo>#<num>` タブを閉じる (gh-review-watcher 用)
 - `open-review-tab <url> <num> <repo>` → `Review: <repo>#<num>` タブを開いて review-pr を走らせる
+- `fire-review-routine <url> <num> <repo>` → ルーティン「PRレビュー一次請け」を /fire API で起動 (gh-review-watcher の
+  on_new_pr 既定。 トークンはキーチェーン `claude-routine-pr-review`。 失敗時は open-review-tab にフォールバック)
 - レイアウト: `zellij --layout work` / `zellij --layout cockpit` (`nix/home-manager/programs/zellij/layouts/`)
 
 参考実装: `nix/home-manager/programs/zellij/zj.sh`, `nix/home-manager/programs/claude-code/close-conflict-tab.sh`
