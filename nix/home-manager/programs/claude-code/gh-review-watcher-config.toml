@@ -56,11 +56,11 @@ name = "Open CI checks (web)"
 command = "gh pr checks {number} -R {repo} --web"
 
 [[actions]]
-name = "Re-review with routine (cloud)"
+name = "Review with routine (cloud)"
 command = "fire-review-routine '{url}' '{number}' '{repo}'"
 
 [[actions]]
-name = "Re-review with Claude (new tab)"
+name = "Review locally (zellij tab)"
 command = "open-review-tab '{url}' '{number}' '{repo}'"
 
 [[actions]]
