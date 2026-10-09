@@ -42,57 +42,18 @@ in
     # Essential plugins
     plenary-nvim
     nvim-web-devicons
-    {
-      plugin = which-key-nvim;
-      type = "lua";
-      config = builtins.readFile "${neovimConfigDir}/lua/plugins/which-key.lua";
-    }
-
-    # UI enhancements - Load dependencies first
-    nui-nvim
-    nvim-notify
-    # Noice.nvim will be configured after dependencies are loaded
-    noice-nvim
 
     # Navigation
     flash-nvim
 
-    # UI/UX
-    no-neck-pain-nvim
-
-    # Colorschemes
+    # Colorscheme
     tokyonight-nvim
-    gruvbox-nvim
-    catppuccin-nvim
-    kanagawa-nvim
-    rose-pine
 
     # Treesitter
     {
       plugin = nvim-treesitter.withAllGrammars;
       type = "lua";
       config = builtins.readFile "${neovimConfigDir}/lua/plugins/treesitter.lua";
-    }
-
-    # File explorer
-    {
-      plugin = nvim-tree-lua;
-      type = "lua";
-      config = builtins.readFile "${neovimConfigDir}/lua/plugins/nvim-tree.lua";
-    }
-
-    # Telescope file browser
-    {
-      plugin = telescope-file-browser-nvim;
-      type = "lua";
-      config = builtins.readFile "${neovimConfigDir}/lua/plugins/telescope-file-browser.lua";
-    }
-
-    # Status line
-    {
-      plugin = lualine-nvim;
-      type = "lua";
-      config = builtins.readFile "${neovimConfigDir}/lua/plugins/lualine.lua";
     }
 
     # LSP
@@ -109,10 +70,13 @@ in
 
     # Fuzzy finder
     telescope-nvim
-    smart-open-nvim
+    {
+      plugin = telescope-file-browser-nvim;
+      type = "lua";
+      config = builtins.readFile "${neovimConfigDir}/lua/plugins/telescope-file-browser.lua";
+    }
 
     # Git integration
-    lazygit-nvim
     {
       plugin = gitsigns-nvim;
       type = "lua";
@@ -124,19 +88,6 @@ in
 
     # Auto-formatting
     conform-nvim
-
-    # AI assistant
-    {
-      plugin = claude-code-nvim;
-      type = "lua";
-      config = builtins.readFile "${neovimConfigDir}/lua/plugins/claude-code.lua";
-    }
-    {
-      plugin = copilot-lua;
-      type = "lua";
-      config = builtins.readFile "${neovimConfigDir}/lua/plugins/copilot.lua";
-    }
-    copilot-cmp
   ];
 
   # Source external init.lua

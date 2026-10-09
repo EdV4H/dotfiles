@@ -67,7 +67,7 @@ nix build .#darwinConfigurations.ATR-LAP-OSX-YUSUKE-MARUYAMA.system
   - Lua-based configuration with custom keybindings
   - Everforest Dark color scheme
   
-- **nix/home-manager/programs/neovim/**: Neovim configuration (currently minimal)
+- **nix/home-manager/programs/neovim/**: Neovim configuration (軽量な編集用。 AI/IDE 系は Claude Desktop に任せ、 LSP・補完・treesitter・telescope 程度に絞っている)
 
 ## Key Configuration Details
 
@@ -131,7 +131,6 @@ When compacting, preserve the following:
 
 ## Important Notes
 
-- The Neovim configuration references a symlink to `${pwd}/conf` which points to `~/dotfiles-nix/home-manager/console/neovim/conf` - this path may need adjustment
 - WezTerm is installed via Homebrew's nightly cask, not Nix
 - The configuration includes both Nix packages and Homebrew casks for different types of applications
 
