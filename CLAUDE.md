@@ -212,6 +212,15 @@ When compacting, preserve the following:
 - 既存の兄弟ディレクトリ worktree (`<repo>-<name>` 等) はメイン Bash から検証不可 →
   サブエージェント(cwd=worktree)に投げる / `.claude/worktrees/` へ移設 / その worktree でセッション起動。
 - **モノレポはリポジトリルートをセッション cwd に** (turbo 等が兄弟パッケージに書けず失敗するため)。
+- **worktree に `.env` 等のクレデンシャルが無いとき、 Claude が自分でコピー/リンクしない** (Read の deny
+  ルールは symlink の先も見るので読めないうえ、 クレデンシャルを動かす操作は権限ポリシーに触れうる)。
+  - Claude が作る worktree (`EnterWorktree` / `--worktree` / `isolation:"worktree"`) には、 メインチェックアウト
+    直下の `.worktreeinclude` (gitignore 記法) に書いた gitignore 済みファイルを Claude Code 本体がコピーする。
+    無ければ「`.worktreeinclude` に `.env` 等を書いて」とユーザーに頼む (会社 repo に commit したくなければ
+    `.git/info/exclude` に `.worktreeinclude` を足せばよい)。
+  - 人間が作る worktree は `wt add <git worktree add の引数>` (同じ `.worktreeinclude` を読んで symlink を貼る。
+    `.worktreeinclude` が無ければ `**/.env` `**/.env.*` `**/.envrc` `**/.dev.vars`。 `WT_COPY=1` でコピー)。
+    既存の worktree には `wt seed [dir]`。 実装は `nix/home-manager/programs/git/wt.sh`。
 
 ### やってはいけない / 依頼に回すこと
 - **迂回しない**: chmod・サンドボックス外での再実行・別フラグ脱出等でサンドボックスを破らない。

@@ -268,6 +268,13 @@ in
     recursive = true;
   };
 
+  # wt: git worktree を作って、 メインチェックアウトの gitignore されたローカルファイル
+  # (.env 等、 .worktreeinclude で指定) を symlink で持ち込む。 `wt add <git worktree add の引数>`
+  home.file.".local/bin/wt" = {
+    source = ./programs/git/wt.sh;
+    executable = true;
+  };
+
   # zj: どのシェル (launchd / Claude の Bash / ターミナル) からでも同じ zellij サーバーに
   # 届くよう $TMPDIR を揃え、 セッション選択・タブ検索・事前チェックをまとめたラッパー。
   # dev-up / dev-down / dev-supervise / open-review-tab / close-*-tab /
