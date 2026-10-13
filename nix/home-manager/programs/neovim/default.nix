@@ -1,6 +1,24 @@
 { pkgs }:
 let
   neovimConfigDir = ./config;
+
+  # 2026-10: nixpkgs の typescript-language-server 6.0.2 は pnpmDeps の hash が
+  # aarch64-darwin で一致せずビルドできない。
+  # Mac で実際に得られた hash に差し替える。 upstream の hash が下の既知の値から変われば
+  # (version bump や再修正) この override は自動で外れるので、 そのときはこのブロックごと消してよい。
+  #   MUSx…: nixos-unstable 7fd4004 時点 / xR/EF…: master の "fix pnpm hash" (NixOS/nixpkgs#572951)
+  knownBadTslsPnpmHashes = [
+    "sha256-MUSxDMlbG21KSesGdEvqa2kEpuVfLlXRUX1qV/FGsSo="
+    "sha256-xR/EF60lVBsITKgH7wCM2wHM46PFQevD51KfCENSUH4="
+  ];
+  typescript-language-server = pkgs.typescript-language-server.overrideAttrs (
+    old:
+    pkgs.lib.optionalAttrs (builtins.elem old.pnpmDeps.outputHash knownBadTslsPnpmHashes) {
+      pnpmDeps = old.pnpmDeps.overrideAttrs {
+        outputHash = "sha256-PmyJb8090pEPc09Tbv8RgdvQpzpba2L8ve87+aVncQU=";
+      };
+    }
+  );
 in
 {
   enable = true;
@@ -17,7 +35,7 @@ in
   extraPackages = with pkgs; [
     # Language servers
     lua-language-server
-    typescript-language-server
+    typescript-language-server # let の override 版 (with より let が優先される)
     nil # Nix language server
     gopls
 
