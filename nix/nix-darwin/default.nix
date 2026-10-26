@@ -49,6 +49,7 @@
       "amazon-workspaces"
       "claude"
       "codexbar"
+      "notion"
     ];
   };
 
