@@ -103,14 +103,24 @@ EOF
 - バグ修正やレビュー指摘対応の場合 → 説明に対応内容を追記
 - 軽微な修正（typo、lint等）→ 更新不要
 
-### Step 8: Copilotレビュー再依頼 & 対応
+### Step 8: 再レビュー依頼 & Copilot対応
 
-前回のCopilotレビューコメントが解決済みか確認し、必要に応じて再レビューを依頼:
+レビュー指摘への対応を push した場合は、**レビュー済みの全員**（人間・Copilot）に再レビューを依頼する。
+APPROVED 済みのレビュアーは対象外。
 
 ```bash
+# レビュー後に head が進み、まだ再依頼していないレビュアー
+gh pr view <NUMBER> --json latestReviews,reviewRequests,headRefOid
+
+# 人間のレビュアー
+gh pr edit <NUMBER> --add-reviewer <login>,<login>
+
+# Copilot
 gh api "repos/{owner}/{repo}/pulls/{pr_number}/requested_reviewers" \
   -f "reviewers[]=copilot-pull-request-reviewer[bot]"
 ```
+
+依頼を出し忘れたまま終えると Stop hook (`~/.claude/hooks/pr-rereview-guard.sh`) に止められる。
 
 `/copilot-review` スキルを実行してCopilotのレビューコメントに対応する。
 
