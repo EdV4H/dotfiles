@@ -127,6 +127,13 @@ in
     executable = true;
   };
 
+  # gh pr create / gh pr ready で出した PR の auto-merge を有効にする PostToolUse hook。
+  # hook 自体の登録は ~/.claude/settings.json 側 (nix 管理外)。
+  home.file.".claude/hooks/pr-auto-merge.sh" = {
+    source = ./programs/claude-code/pr-auto-merge.sh;
+    executable = true;
+  };
+
   # Claude Code のタブ名に作業状態 (思考中 / 完了) を出す hook。 claude-zellij で起動した
   # タブだけが対象で、 それ以外 (Claude デスクトップアプリ等) では何もしない。
   # hook 自体の登録は ~/.claude/settings.json 側 (nix 管理外)。
