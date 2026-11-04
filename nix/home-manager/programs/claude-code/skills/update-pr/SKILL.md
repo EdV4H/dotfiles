@@ -130,7 +130,9 @@ gh api "repos/{owner}/{repo}/pulls/{pr_number}/requested_reviewers" \
 gh pr checks <NUMBER> --watch --fail-fast
 ```
 
-- **全チェック通過**: auto-mergeを有効化（Copilotレビュー対応完了後）
+- **全チェック通過**: `gh pr view <NUMBER> --json autoMergeRequest` で auto-merge が有効か確認する。
+  PR 作成時に hook (`~/.claude/hooks/pr-auto-merge.sh`) が有効にしているはず。無効なら理由を報告する
+  （`gh pr merge --auto` はマージ可能な PR だと即マージすることがあるので使わない）
 - **チェック失敗**: 失敗したチェック名を報告
 
 ### Step 10: サマリー表示
@@ -151,4 +153,4 @@ gh pr checks <NUMBER> --watch --fail-fast
 - 既存のコミットを amend しない（新しいコミットとして追加する）
 - force push はユーザーの明示的な同意がある場合のみ
 - PRの説明を更新する際、既存の内容を完全に上書きするのではなく、必要な部分のみ更新する
-- auto-merge は Copilot レビュー対応完了後に有効化する
+- auto-merge は PR 作成時に hook が有効にする。自分で無効化・マージしない
