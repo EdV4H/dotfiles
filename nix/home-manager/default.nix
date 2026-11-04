@@ -140,6 +140,13 @@ in
     executable = true;
   };
 
+  # レビュー対応を push したのに再レビュー依頼を出さずに終えようとしたら止める Stop hook。
+  # hook 自体の登録は ~/.claude/settings.json 側 (nix 管理外)。
+  home.file.".claude/hooks/pr-rereview-guard.sh" = {
+    source = ./programs/claude-code/pr-rereview-guard.sh;
+    executable = true;
+  };
+
   # Claude Code zellij wrapper (claude-zellij command)
   home.file.".local/bin/claude-zellij" = {
     source = ./programs/claude-code/claude-zellij.sh;
