@@ -293,8 +293,10 @@ aws sso login   # profile ごとに
 gcloud auth login && gcloud auth application-default login
 docker login
 
-# 5. node 環境 (mise が global=latest で自動管理。特定バージョンが要る時のみ)
-mise use -g node@<version>
+# 5. node 環境 (mise の global は dotfiles の programs.mise.globalConfig で固定済み。
+#    ~/.config/mise/config.toml は読み取り専用なので `mise use -g` は使えない。
+#    プロジェクト単位で別の版が要る時だけ、 その repo で mise use node@<version>)
+mise install
 
 # 6. Kiro CLI を使う場合 (退避された zprofile を戻す)
 [ -f ~/.zprofile.kiro.bak ] && mv ~/.zprofile ~/.zprofile.hm.bak && mv ~/.zprofile.kiro.bak ~/.zprofile

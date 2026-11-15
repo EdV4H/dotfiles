@@ -85,7 +85,9 @@ in
   programs.home-manager.enable = true;
   programs.wezterm = import ./programs/wezterm/default.nix;
 
-  # mise: ランタイム管理 (旧 volta の置き換え)。 node は latest をグローバル固定。
+  # mise: ランタイム管理 (旧 volta の置き換え)。 node はグローバルで 24.22.1 に固定。
+  # ~/.config/mise/config.toml は nix 生成の読み取り専用なので `mise use -g` は使えない。
+  # グローバルの版を変えるときはここを書き換えて `nix run .#update`。
   #
   # ni / ccusage 等の npm backend ツールはここでは管理しない。 npm.flatt.tech の
   # min-release-age (リリース後 5 日は install 拒否) と mise の "latest"/レンジ解決が
@@ -97,7 +99,7 @@ in
     enableZshIntegration = true;
     globalConfig = {
       tools = {
-        node = "latest";
+        node = "24.22.1";
       };
     };
   };
