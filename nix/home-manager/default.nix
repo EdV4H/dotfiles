@@ -85,7 +85,7 @@ in
   programs.home-manager.enable = true;
   programs.wezterm = import ./programs/wezterm/default.nix;
 
-  # mise: ランタイム管理 (旧 volta の置き換え)。 node はグローバルで 24.22.1 に固定。
+  # mise: ランタイム管理 (旧 volta の置き換え)。 node はグローバルで latest。
   # ~/.config/mise/config.toml は nix 生成の読み取り専用なので `mise use -g` は使えない。
   # グローバルの版を変えるときはここを書き換えて `nix run .#update`。
   #
@@ -99,7 +99,7 @@ in
     enableZshIntegration = true;
     globalConfig = {
       tools = {
-        node = "24.22.1";
+        node = "latest";
       };
     };
   };
